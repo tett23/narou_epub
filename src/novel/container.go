@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"sort"
 	"time"
 
 	"github.com/pkg/errors"
@@ -166,6 +167,10 @@ func (container *Container) loadDirectory() error {
 		episodes = append(episodes, *episode)
 
 		return nil
+	})
+
+	sort.Slice(episodes, func(i, j int) bool {
+		return episodes[i].EpisodeNumber < episodes[j].EpisodeNumber
 	})
 
 	container.episodes = episodes
