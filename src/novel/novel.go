@@ -47,15 +47,10 @@ func GetFeed(ch chan *config.CrawlData) error {
 			}
 
 			latest = current
-			latest.GeneralAllNo = latest.GeneralAllNo - 1
-		}
-
-		if current.GeneralAllNo <= latest.GeneralAllNo {
-			break
 		}
 
 		fmt.Println(current, latest)
-		for i := latest.GeneralAllNo; i < current.GeneralAllNo; i++ {
+		for i := latest.GeneralAllNo; i <= current.GeneralAllNo; i++ {
 			// channelでクロールに回す
 			item := current
 			item.GeneralAllNo = i
