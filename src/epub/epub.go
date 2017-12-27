@@ -7,6 +7,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -80,6 +81,10 @@ func (epub Epub) GenerateAll() error {
 		return errors.Wrapf(err, "epub.GenerateAll: generateEpub NCode: %s", epub.NCode)
 	}
 
+	if err = convertMobi(epub.OutputFileName()); err != nil {
+		return errors.Wrapf(err, "epub.GenerateAll: convertMobi NCode: %s", epub.NCode)
+	}
+
 	return nil
 }
 
@@ -100,6 +105,10 @@ func (epub Epub) GenerateByEpisodeNumber(episodeNumber int) error {
 
 	if err = epub.generateEpub(); err != nil {
 		return errors.Wrapf(err, "epub.GenerateByEpisodeNumber: generateEpub NCode: %s, EpisodeNumber: %d", epub.NCode, episodeNumber)
+	}
+
+	if err = convertMobi(epub.OutputFileName()); err != nil {
+		return errors.Wrapf(err, "epub.GenerateByEpisodeNumber: convertMobi NCode: %s", epub.NCode)
 	}
 
 	return nil
@@ -209,9 +218,10 @@ func toHTML(episode *novel.Episode) ([]byte, error) {
 }
 
 type epubItem struct {
-	Name  string
-	Path  string
-	Order int
+	Name          string
+	Path          string
+	EpisodeNumber int
+	Order         int
 }
 
 func (epub Epub) indexItems() []epubItem {
@@ -224,9 +234,10 @@ func (epub Epub) indexItems() []epubItem {
 
 	for i, item := range epub.episodes {
 		items = append(items, epubItem{
-			Name:  item.EpisodeTitle,
-			Path:  item.EpubPath(),
-			Order: i + 1,
+			Name:          item.EpisodeTitle,
+			Path:          item.EpubPath(),
+			EpisodeNumber: item.EpisodeNumber,
+			Order:         i + 1,
 		})
 	}
 
@@ -234,7 +245,6 @@ func (epub Epub) indexItems() []epubItem {
 }
 
 func (epub Epub) createContentOpf() error {
-
 	data := map[string]interface{}{
 		"title":  epub.title,
 		"author": epub.author,
@@ -282,6 +292,7 @@ func (epub Epub) createOverview() error {
 		"nCode":  epub.NCode,
 		"author": epub.author,
 		"date":   time.Now().Format("2006-01-02T15:04:05-07:00"),
+		"items":  epub.indexItems()[1:],
 	}
 
 	if len(epub.episodes) == 1 {
@@ -428,4 +439,14 @@ func dcopy(src, dest string, info os.FileInfo) error {
 	}
 
 	return nil
+}
+
+func convertMobi(src string) error {
+	err := exec.Command("kindlegen", src).Run()
+	if err != nil {
+		errors.Wrapf(err, "convertMobi convert error %s", src)
+	}
+
+	return nil
+
 }

@@ -14,6 +14,9 @@ import (
 )
 
 func main() {
+	// container := novel.GetContainer("N6475DB")
+	// episode := container.GetEpisode(252)
+	// e := epub.NewEpub(episode.NCode, e)
 	ch := make(chan *config.CrawlData, 1)
 	err := novel.GetFeed(ch)
 	if err != nil {

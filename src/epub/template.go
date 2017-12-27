@@ -46,6 +46,14 @@ const overviewTemplate = `{{define "overview"}}<?xml version='1.0' encoding='utf
     <p class="calibre6">Author {{.author}}</p>
     <p class="calibre6">CreatedAt {{.date}}</p>
 
+    <nav id="toc" xmlns:epub="http://www.idpf.org/2007/ops" epub:type="toc">
+      <ol>
+      {{range $i, $v := .items}}
+        <li><a href="section_{{$v.EpisodeNumber}}.html">{{$v.Name}}</a></li>
+      {{end}}
+      </ol>
+    </nav>
+
     <p class="pagebreak"></p>
   </body>
 </html>
@@ -69,7 +77,11 @@ const contentOpfTemplate = `{{define "opf"}}<?xml version='1.0' encoding='utf-8'
     <item href="stylesheet.css" id="css" media-type="text/css"/>
     <item href="toc.ncx" id="ncx" media-type="application/x-dtbncx+xml"/>
     {{range $i, $v := .items}}
+    {{if eq $v.Path "body/overview.html"}}
+    <item href="{{$v.Path}}" properties="nav" id="id_{{$v.Order}}" media-type="application/xhtml+xml"/>
+    {{else}}
     <item href="{{$v.Path}}" id="id_{{$v.Order}}" media-type="application/xhtml+xml"/>
+    {{end}}
     {{end}}
   </manifest>
   <spine toc="ncx" page-progression-direction="rtl">
