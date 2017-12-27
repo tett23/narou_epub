@@ -69,7 +69,7 @@ func (container Container) NCodeNumber() (int, error) {
 	return nCodeNumber(container.NCode)
 }
 
-func (container Container) Write() error {
+func (container *Container) Write() error {
 	if err := checkContainerDirectory(container.NCode); err != nil {
 		errors.Wrap(err, "Container.Write checkContainerDirectory")
 	}

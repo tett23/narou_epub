@@ -7,17 +7,19 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/pkg/errors"
 )
 
 type Episode struct {
-	NCode         string `json:"ncode"`
-	EpisodeNumber int    `json:"episode_number"`
-	EpisodeTitle  string `json:"episode_title"`
-	Body          string `json:"body"`
-	Preface       string `json:"preface"`
-	Postscript    string `json:"postscript"`
+	NCode         string    `json:"ncode"`
+	EpisodeNumber int       `json:"episode_number"`
+	EpisodeTitle  string    `json:"episode_title"`
+	Body          string    `json:"body"`
+	Preface       string    `json:"preface"`
+	Postscript    string    `json:"postscript"`
+	UpdatedAt     time.Time `json:"updated_at"`
 }
 
 func NewEpisode(nCode string, episodeNumber int, body string) *Episode {
@@ -85,12 +87,14 @@ func (episode *Episode) Parse(txt string) {
 	episode.Body = strings.Join(lines[2:], "\n")
 }
 
-func (episode Episode) Write() error {
+func (episode *Episode) Write() error {
 	if err := checkContainerDirectory(episode.NCode); err != nil {
 		return errors.Wrap(err, "Episode.Write checkContainerDirectory")
 	}
 
 	fmt.Println("write", episode.Path())
+
+	episode.UpdatedAt = time.Now()
 
 	bytes, err := json.Marshal(episode)
 	if err != nil {
