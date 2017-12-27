@@ -1,2 +1,5 @@
 package: github.com/tett23/narou_epub
-import: []
+import:
+- package: gopkg.in/yaml.v2
+- package: github.com/pkg/errors
+  version: v0.8.0
