@@ -1,6 +1,7 @@
-package novel
+package epub
 
 const htmlTemplate = `
+{{define "base"}}
 <?xml version='1.0' encoding='utf-8'?>
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" xml:lang="ja" lang="ja" class="vrtl">
   <head>
@@ -16,4 +17,5 @@ const htmlTemplate = `
     {{end}}
   </body>
 </html>
+{{end}}
 `

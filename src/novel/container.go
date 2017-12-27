@@ -2,14 +2,12 @@ package novel
 
 import (
 	"fmt"
-	"html/template"
-	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
-	"strings"
 
+	"github.com/pkg/errors"
 	"github.com/tett23/narou_epub/src/config"
 )
 
@@ -35,6 +33,23 @@ func NewContainer(nCode string) *Container {
 	}
 }
 
+func GetContainer(nCode string) (*Container, error) {
+	ret := Container{
+		NCode: nCode,
+	}
+
+	dir := ret.containerDirectory()
+	stat, err := os.Stat(dir)
+	if err != nil {
+		return nil, errors.Wrapf(err, "GetContainer not found NCode: %s", nCode)
+	}
+	if !stat.IsDir() {
+		return nil, errors.Wrapf(err, "GetContainer not found NCode: %s", nCode)
+	}
+
+	return &ret, nil
+}
+
 func (container Container) NCodeNumber() (int, error) {
 	return nCodeNumber(container.NCode)
 }
@@ -46,7 +61,7 @@ func (container Container) Write(item *config.CrawlData, body []byte) error {
 
 	fmt.Println("write", container.containerDirectory())
 
-	if err := ioutil.WriteFile(container.episodeFilePath(item), body, os.ModePerm); err != nil {
+	if err := ioutil.WriteFile(container.episodeFilePath(item.GeneralAllNo), body, os.ModePerm); err != nil {
 		return err
 	}
 
@@ -81,33 +96,34 @@ func (container Container) containerDirectory() string {
 	return filepath.Join(containerRoot, container.NCode)
 }
 
-func (container Container) episodeFilePath(item *config.CrawlData) string {
-	filename := fmt.Sprintf("%04d.txt", item.GeneralAllNo)
+func (container Container) episodeFilePath(episodeNumber int) string {
+	filename := fmt.Sprintf("%04d.txt", episodeNumber)
 
 	return filepath.Join(containerRoot, container.NCode, containerBodyDirectory, filename)
 }
 
-func toHTML(body []byte, container *Container) ([]byte, error) {
-	var ret []byte
-	tmpl, err := template.New("").Parse(htmlTemplate)
+func (container Container) IsExistEpisode(episodeNumber int) bool {
+	stat, err := os.Stat(container.episodeFilePath(episodeNumber))
 	if err != nil {
-		return ret, err
+		return false
 	}
 
-	lines := strings.Split(string(body), "\n")
+	return !stat.IsDir()
+}
 
-	data := map[string]interface{}{
-		"title": "",
-		"lines": lines,
+func (container Container) GetAvailableEpisodeNumbers() ([]int, error) {
+	return nil, nil
+}
+
+func (container Container) GetEpisode(episodeNumber int) ([]byte, error) {
+	if !container.isExistContainerDirectory() {
+		return nil, errors.Errorf("GetEpisode error: episode file not found NCode: %s, EpisodeNumber: %d", container.NCode, episodeNumber)
 	}
 
-	var buf io.ReadWriter
-	if err := tmpl.Execute(buf, data); err != nil {
-		return ret, err
-	}
-
-	if _, err := buf.Read(ret); err != nil {
-		return ret, err
+	p := container.episodeFilePath(episodeNumber)
+	ret, err := ioutil.ReadFile(p)
+	if err != nil {
+		return nil, errors.Wrap(err, fmt.Sprintf("GetEpisode ioutil.ReadFile(%d)", episodeNumber))
 	}
 
 	return ret, nil
