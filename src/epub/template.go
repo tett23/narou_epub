@@ -29,6 +29,29 @@ const htmlTemplate = `{{define "base"}}<?xml version='1.0' encoding='utf-8'?>
 {{end}}
 `
 
+const overviewTemplate = `{{define "overview"}}<?xml version='1.0' encoding='utf-8'?>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" xml:lang="ja" lang="ja" class="vrtl">
+  <head>
+    <title>{{.title}}</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <link href="../stylesheet.css" rel="stylesheet" type="text/css"/>
+    <link href="../page_styles.css" rel="stylesheet" type="text/css"/>
+  </head>
+  <body id="main" class="calibre">
+    <h2 class="calibre7" id="calibre_pb_0">{{.title}}</h2>
+    {{if .episodeTitle}}
+    <h3 class="calibre3">{{.episodeTitle}}</h3>
+    {{end}}
+    <p class="calibre6">NCode {{.nCode}}</p>
+    <p class="calibre6">Author {{.author}}</p>
+    <p class="calibre6">CreatedAt {{.date}}</p>
+
+    <p class="pagebreak"></p>
+  </body>
+</html>
+{{end}}
+`
+
 const contentOpfTemplate = `{{define "opf"}}<?xml version='1.0' encoding='utf-8'?>
 <package xmlns="http://www.idpf.org/2007/opf" unique-identifier="uuid_id" version="2.0">
   <metadata xmlns:calibre="http://calibre.kovidgoyal.net/2009/metadata" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:opf="http://www.idpf.org/2007/opf" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
@@ -46,12 +69,12 @@ const contentOpfTemplate = `{{define "opf"}}<?xml version='1.0' encoding='utf-8'
     <item href="stylesheet.css" id="css" media-type="text/css"/>
     <item href="toc.ncx" id="ncx" media-type="application/x-dtbncx+xml"/>
     {{range $i, $v := .items}}
-    <item href="{{$v.Path}}" id="id_{{$i}}" media-type="application/xhtml+xml"/>
+    <item href="{{$v.Path}}" id="id_{{$v.Order}}" media-type="application/xhtml+xml"/>
     {{end}}
   </manifest>
   <spine toc="ncx" page-progression-direction="rtl">
     {{range $i, $v := .items}}
-    <itemref idref="id_{{$i}}"/>
+    <itemref idref="id_{{$v.Order}}"/>
     {{end}}
   </spine>
   <guide/>
@@ -73,7 +96,7 @@ const tocNcxTemplate = `{{define "ncx"}}<?xml version='1.0' encoding='utf-8'?>
   </docTitle>
   <navMap>
     {{range $i, $v := .items}}
-    <navPoint class="chapter" id="id_{{$i}}" playOrder="{{$i}}">
+    <navPoint class="chapter" id="id_{{$v.Order}}" playOrder="{{$v.Order}}">
       <navLabel>
         <text>{{$v.Name}}</text>
       </navLabel>

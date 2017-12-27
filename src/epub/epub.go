@@ -40,7 +40,7 @@ func init() {
 	outDirectory = filepath.Join(dir, "epub")
 	templateDirectory = filepath.Join(dir, "epub_template")
 
-	tmpl = template.Must(template.New("base").Parse(htmlTemplate + tocNcxTemplate + contentOpfTemplate))
+	tmpl = template.Must(template.New("base").Parse(htmlTemplate + overviewTemplate + tocNcxTemplate + contentOpfTemplate))
 }
 
 func NewEpub(nCode, title, author string) *Epub {
@@ -141,6 +141,9 @@ func (epub Epub) generateEpub() error {
 	if err := epub.createTocNcx(); err != nil {
 		return errors.Wrap(err, "createTocNcx")
 	}
+	if err := epub.createOverview(); err != nil {
+		return errors.Wrap(err, "createOverview")
+	}
 
 	if err := createZip(dir, out); err != nil {
 		return errors.Wrap(err, "createZip")
@@ -187,10 +190,14 @@ func (epub Epub) containerDirectory() string {
 
 func toHTML(episode *novel.Episode) ([]byte, error) {
 	data := map[string]interface{}{
-		"title":      episode.EpisodeTitle,
-		"preface":    strings.Split(episode.Preface, "\n"),
-		"body":       strings.Split(episode.Body, "\n"),
-		"postscript": strings.Split(episode.Postscript, "\n"),
+		"title": episode.EpisodeTitle,
+		"body":  strings.Split(episode.Body, "\n"),
+	}
+	if episode.Preface != "" {
+		data["preface"] = strings.Split(episode.Preface, "\n")
+	}
+	if episode.Postscript != "" {
+		data["postscript"] = strings.Split(episode.Postscript, "\n")
 	}
 
 	var buf bytes.Buffer
@@ -202,18 +209,31 @@ func toHTML(episode *novel.Episode) ([]byte, error) {
 }
 
 type epubItem struct {
-	Name string
-	Path string
+	Name  string
+	Path  string
+	Order int
+}
+
+func (epub Epub) indexItems() []epubItem {
+	items := make([]epubItem, 0)
+	items = append(items, epubItem{
+		Name:  "overview",
+		Path:  "body/overview.html",
+		Order: 0,
+	})
+
+	for i, item := range epub.episodes {
+		items = append(items, epubItem{
+			Name:  item.EpisodeTitle,
+			Path:  item.EpubPath(),
+			Order: i + 1,
+		})
+	}
+
+	return items
 }
 
 func (epub Epub) createContentOpf() error {
-	items := make([]epubItem, 0)
-	for _, item := range epub.episodes {
-		items = append(items, epubItem{
-			Name: item.EpisodeTitle,
-			Path: item.EpubPath(),
-		})
-	}
 
 	data := map[string]interface{}{
 		"title":  epub.title,
@@ -221,7 +241,7 @@ func (epub Epub) createContentOpf() error {
 		"uuid":   epub.UUID,
 		"date":   time.Now().Format("2006-01-02T15:04:05-07:00"),
 		// 2017-12-18T23:32:49+00:00
-		"items": items,
+		"items": epub.indexItems(),
 	}
 
 	var buf bytes.Buffer
@@ -236,21 +256,13 @@ func (epub Epub) createContentOpf() error {
 }
 
 func (epub Epub) createTocNcx() error {
-	items := make([]epubItem, 0)
-	for _, item := range epub.episodes {
-		items = append(items, epubItem{
-			Name: item.EpisodeTitle,
-			Path: item.EpubPath(),
-		})
-	}
-
 	data := map[string]interface{}{
 		"title":  epub.title,
 		"author": epub.author,
 		"uuid":   epub.UUID,
 		"date":   time.Now().Format("2006-01-02T15:04:05-07:00"),
 		// 2017-12-18T23:32:49+00:00
-		"items": items,
+		"items": epub.indexItems(),
 	}
 
 	var buf bytes.Buffer
@@ -259,6 +271,29 @@ func (epub Epub) createTocNcx() error {
 	}
 
 	filename := filepath.Join(epub.containerDirectory(), "toc.ncx")
+	ioutil.WriteFile(filename, buf.Bytes(), os.ModePerm)
+
+	return nil
+}
+
+func (epub Epub) createOverview() error {
+	data := map[string]interface{}{
+		"title":  epub.title,
+		"nCode":  epub.NCode,
+		"author": epub.author,
+		"date":   time.Now().Format("2006-01-02T15:04:05-07:00"),
+	}
+
+	if len(epub.episodes) == 1 {
+		data["episodeTitle"] = fmt.Sprintf("%d部分:%s", epub.episodes[0].EpisodeNumber, epub.episodes[0].EpisodeTitle)
+	}
+
+	var buf bytes.Buffer
+	if err := tmpl.ExecuteTemplate(&buf, "overview", &data); err != nil {
+		return err
+	}
+
+	filename := filepath.Join(epub.containerDirectory(), "body", "overview.html")
 	ioutil.WriteFile(filename, buf.Bytes(), os.ModePerm)
 
 	return nil
