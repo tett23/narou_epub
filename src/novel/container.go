@@ -1,18 +1,23 @@
 package novel
 
 import (
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
+	"time"
 
 	"github.com/pkg/errors"
 )
 
 type Container struct {
-	NCode  string
-	Title  string
-	Author string
-	UserID int
+	NCode     string    `json:"n_code"`
+	Title     string    `json:"title"`
+	Author    string    `json:"author"`
+	UserID    int       `json:"user_id"`
+	UpdatedAt time.Time `json:"updated_at"`
 
 	episodes []Episode
 }
@@ -52,11 +57,41 @@ func GetContainer(nCode string) (*Container, error) {
 		return nil, errors.Wrapf(err, "GetContainer not found NCode: %s", nCode)
 	}
 
+	if err = ret.loadDirectory(); err != nil {
+		return nil, errors.Wrapf(err, "GetContainer loadDirectory %s", nCode)
+	}
+
 	return &ret, nil
 }
 
 func (container Container) NCodeNumber() (int, error) {
 	return nCodeNumber(container.NCode)
+}
+
+func (container Container) Write() error {
+	if err := checkContainerDirectory(container.NCode); err != nil {
+		errors.Wrap(err, "Container.Write checkContainerDirectory")
+	}
+
+	fmt.Println("write", container.Path())
+
+	container.UpdatedAt = time.Now()
+
+	bytes, err := json.Marshal(container)
+	if err != nil {
+		return errors.Wrap(err, "Container.Write json.Marshall")
+	}
+
+	outPath := container.Path()
+	if err := ioutil.WriteFile(outPath, bytes, os.ModePerm); err != nil {
+		return errors.Wrap(err, "Container.Write ioutil.WriteFile")
+	}
+
+	return nil
+}
+
+func (container Container) Path() string {
+	return filepath.Join(containerDirectory(container.NCode), "container.json")
 }
 
 func checkContainerDirectory(nCode string) error {

@@ -38,6 +38,10 @@ func main() {
 	}
 }
 
+func crawlAll(item *config.CrawlData) error {
+	return nil
+}
+
 func crawl(item *config.CrawlData) error {
 	episodeNumber := item.GeneralAllNo
 	params := url.Values{
@@ -60,8 +64,13 @@ func crawl(item *config.CrawlData) error {
 		return err
 	}
 
+	container := novel.NewContainer(item.NCode, item.Title, item.Writer, item.UserID)
+	if err = container.Write(); err != nil {
+		return err
+	}
+
 	episode := novel.NewEpisode(item.NCode, episodeNumber, string(body))
-	if episode.Write(); err != nil {
+	if err = episode.Write(); err != nil {
 		return err
 	}
 
@@ -70,6 +79,16 @@ func crawl(item *config.CrawlData) error {
 		return err
 	}
 	fmt.Printf("write epub file %s\n", e.OutputFileName())
+
+	return nil
+}
+
+func buildEpub(episode *novel.Episode) error {
+
+	return nil
+}
+
+func buildEpubAll(container *novel.Container) error {
 
 	return nil
 }
