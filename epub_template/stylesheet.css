@@ -1,0 +1,68 @@
+.calibre {
+    -webkit-writing-mode: vertical-rl;
+    display: block;
+    font-size: 1em;
+    line-height: 125%;
+    text-align: justify;
+    writing-mode: vertical-rl;
+    padding: 0;
+    margin: 0 5pt
+    }
+.calibre1 {
+    display: block;
+    font-size: 2em;
+    font-weight: bold;
+    line-height: 125%;
+    margin: 0.67em 0
+    }
+.calibre2 {
+    display: block;
+    font-weight: bold;
+    line-height: 125%;
+    margin: 3em 0 1.33em
+    }
+.calibre3 {
+    display: block;
+    font-size: 1.125em;
+    font-weight: bold;
+    line-height: 125%;
+    margin: 3em 0 1em
+    }
+.calibre4 {
+    line-height: 125%
+    }
+.calibre5 {
+    display: block;
+    line-height: 125%
+    }
+.calibre6 {
+    display: block;
+    line-height: 125%
+    }
+.calibre7 {
+    display: block;
+    font-size: 1.41667em;
+    font-weight: bold;
+    line-height: 125%;
+    margin: 0.83em 0
+    }
+.pagebreak {
+    color: gray;
+    display: block;
+    height: 0;
+    line-height: 125%;
+    visibility: hidden;
+    margin: 0.5em auto;
+    border: currentColor none 0
+    }
+.tcy {
+    -webkit-text-combine: horizontal;
+    letter-spacing: -0.1ex;
+    line-height: 125%;
+    text-combine: horizontal
+    }
+.tny {
+    -webkit-text-combine: horizontal;
+    line-height: 125%;
+    text-combine: horizontal
+    }

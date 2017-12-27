@@ -1,8 +1,6 @@
 package epub
 
-const htmlTemplate = `
-{{define "base"}}
-<?xml version='1.0' encoding='utf-8'?>
+const htmlTemplate = `{{define "base"}}<?xml version='1.0' encoding='utf-8'?>
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" xml:lang="ja" lang="ja" class="vrtl">
   <head>
     <title>{{.title}}</title>
@@ -10,12 +8,68 @@ const htmlTemplate = `
     <link href="../stylesheet.css" rel="stylesheet" type="text/css"/>
     <link href="../page_styles.css" rel="stylesheet" type="text/css"/>
   </head>
-  <body id="E9OE0-ab176f2d8da64abb8d9f8e088e8b6a8f" class="calibre">
+  <body id="main" class="calibre">
     <h2 class="calibre7" id="calibre_pb_0">{{.title}}</h2>
     {{range .lines}}
       {{.}}<p class="calibre6" style="margin:0pt; border:0pt; height:0pt"> </p>
     {{end}}
   </body>
 </html>
+{{end}}
+`
+
+const contentOpfTemplate = `{{define "opf"}}<?xml version='1.0' encoding='utf-8'?>
+<package xmlns="http://www.idpf.org/2007/opf" unique-identifier="uuid_id" version="2.0">
+  <metadata xmlns:calibre="http://calibre.kovidgoyal.net/2009/metadata" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:opf="http://www.idpf.org/2007/opf" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <dc:date>{{.date}}</dc:date>
+    <!-- <dc:publisher></dc:publisher> -->
+    <!-- <dc:rights></dc:rights> -->
+    <dc:creator opf:file-as="Unknown" opf:role="aut">{{.author}}</dc:creator>
+    <dc:language>ja</dc:language>
+    <dc:identifier id="uuid_id" opf:scheme="uuid">{{.uuid}}</dc:identifier>
+    <dc:title>{{.title}}</dc:title>
+    <meta content="vertical-rl" name="primary-writing-mode"/>
+  </metadata>
+  <manifest>
+    <item href="page_styles.css" id="page_css" media-type="text/css"/>
+    <item href="stylesheet.css" id="css" media-type="text/css"/>
+    <item href="toc.ncx" id="ncx" media-type="application/x-dtbncx+xml"/>
+    {{range $i, $v := .items}}
+    <item href="{{$v}}" id="id_{{$i}}" media-type="application/xhtml+xml"/>
+    {{end}}
+  </manifest>
+  <spine toc="ncx" page-progression-direction="rtl">
+    {{range $i, $v := .items}}
+    <itemref idref="id_{{$i}}"/>
+    {{end}}
+  </spine>
+  <guide/>
+</package>
+{{end}}
+`
+
+const tocNcxTemplate = `{{define "ncx"}}<?xml version='1.0' encoding='utf-8'?>
+<ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1" xml:lang="jpn">
+  <head>
+    <meta content="{{.uuid}}" name="dtb:uid"/>
+    <meta content="2" name="dtb:depth"/>
+    <meta content="narou_epub" name="dtb:generator"/>
+    <meta content="0" name="dtb:totalPageCount"/>
+    <meta content="0" name="dtb:maxPageNumber"/>
+  </head>
+  <docTitle>
+    <text>{{.title}}</text>
+  </docTitle>
+  <navMap>
+    {{range $i, $v := .items}}
+    <navPoint class="chapter" id="id_{{$i}}" playOrder="{{$i}}">
+      <navLabel>
+        <text>タイトルページ</text>
+      </navLabel>
+      <content src="{{$v}}#main"/>
+    </navPoint>
+    {{end}}
+  </navMap>
+</ncx>
 {{end}}
 `

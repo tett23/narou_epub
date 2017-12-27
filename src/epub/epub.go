@@ -4,27 +4,33 @@ import (
 	"archive/zip"
 	"bytes"
 	"fmt"
-	"html/template"
 	"io"
 	"io/ioutil"
-	"math/rand"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
+	"text/template"
 	"time"
 
 	"github.com/pkg/errors"
+	uuid "github.com/satori/go.uuid"
 	"github.com/tett23/narou_epub/src/novel"
 )
 
 type Epub struct {
 	NCode string
-	ID    string
+	UUID  string
+
+	items  []string
+	title  string
+	author string
 }
 
-var containerRoot = ""
-var outDirectory = ""
+var containerRoot string
+var outDirectory string
+var templateDirectory string
+var tmpl *template.Template
 
 const containerBodyDirectory = "body"
 
@@ -32,22 +38,27 @@ func init() {
 	_, filename, _, _ := runtime.Caller(1)
 	dir, _ := filepath.Abs(filepath.Dir(filename))
 
-	containerRoot = filepath.Join(dir, "epub")
-	outDirectory = filepath.Join(dir, "out")
+	containerRoot = filepath.Join(dir, "tmp")
+	outDirectory = filepath.Join(dir, "epub")
+	templateDirectory = filepath.Join(dir, "epub_template")
+
+	tmpl = template.Must(template.New("base").Parse(htmlTemplate + tocNcxTemplate + contentOpfTemplate))
 }
 
-func NewEpub(container *novel.Container) *Epub {
+func NewEpub(nCode, title, author string) *Epub {
+	id := uuid.NewV4().String()
 	return &Epub{
-		NCode: container.NCode,
-		ID:    id(container.NCode, time.Now()),
+		NCode: nCode,
+		UUID:  id,
+
+		items:  make([]string, 0),
+		title:  title,
+		author: author,
 	}
 }
 
-func id(nCode string, t time.Time) string {
-	rand.Seed(time.Now().UnixNano())
-	r := rand.Intn(1000)
-
-	return fmt.Sprintf("%s-%d-%d", nCode, t.Unix(), r)
+func (epub Epub) Name() string {
+	return fmt.Sprintf("%s-%s", epub.NCode, epub.UUID)
 }
 
 func (epub Epub) GenerateAll() error {
@@ -91,7 +102,7 @@ func (epub Epub) GenerateByEpisodeNumber(episodeNumber int) error {
 	return nil
 }
 
-func (epub Epub) addEpisodeFile(container *novel.Container, episodeNumber int) error {
+func (epub *Epub) addEpisodeFile(container *novel.Container, episodeNumber int) error {
 	if !container.IsExistEpisode(episodeNumber) {
 		return errors.Errorf("epub.addEpisodeFile: episode not found NCode: %s, EpisodeNumber: %d", epub.NCode, episodeNumber)
 	}
@@ -110,9 +121,12 @@ func (epub Epub) addEpisodeFile(container *novel.Container, episodeNumber int) e
 		return errors.Wrapf(err, "epub.addEpisodeFile: checkDirectory NCode: %s, EpisodeNumber: %d", epub.NCode, episodeNumber)
 	}
 
-	if err := ioutil.WriteFile(epub.episodeFilePath(episodeNumber), html, os.ModePerm); err != nil {
+	filename := epub.episodeFilePath(episodeNumber)
+	if err := ioutil.WriteFile(filename, html, os.ModePerm); err != nil {
 		return errors.Wrapf(err, "epub.addEpisodeFile: WriteFile NCode: %s, EpisodeNumber: %d", epub.NCode, episodeNumber)
 	}
+
+	epub.items = append(epub.items, strings.TrimPrefix(filename, epub.containerDirectory()+"/"))
 
 	return nil
 }
@@ -121,8 +135,19 @@ func (epub Epub) generateEpub() error {
 	dir := epub.containerDirectory()
 	out := epub.OutputFileName()
 
+	if err := copyTemplateDirectory(dir); err != nil {
+		return errors.Wrap(err, "copyTemplateDirectory")
+	}
+
+	if err := epub.createContentOpf(); err != nil {
+		return errors.Wrap(err, "createContentOpf")
+	}
+	if err := epub.createTocNcx(); err != nil {
+		return errors.Wrap(err, "createTocNcx")
+	}
+
 	if err := createZip(dir, out); err != nil {
-		return err
+		return errors.Wrap(err, "createZip")
 	}
 
 	return nil
@@ -148,7 +173,7 @@ func (epub Epub) checkDirectory() error {
 }
 
 func (epub Epub) OutputFileName() string {
-	return filepath.Join(outDirectory, fmt.Sprintf("%s.epub", epub.ID))
+	return filepath.Join(outDirectory, fmt.Sprintf("%s.epub", epub.Name()))
 }
 
 func (epub Epub) isExistContainerDirectory() bool {
@@ -161,13 +186,13 @@ func (epub Epub) isExistContainerDirectory() bool {
 }
 
 func (epub Epub) containerDirectory() string {
-	return filepath.Join(containerRoot, epub.ID)
+	return filepath.Join(containerRoot, epub.Name())
 }
 
 func (epub Epub) episodeFilePath(episodeNumber int) string {
 	filename := fmt.Sprintf("%04d.html", episodeNumber)
 
-	return filepath.Join(containerRoot, epub.ID, containerBodyDirectory, filename)
+	return filepath.Join(containerRoot, epub.Name(), containerBodyDirectory, filename)
 }
 
 func toHTML(body []byte) ([]byte, error) {
@@ -180,7 +205,6 @@ func toHTML(body []byte) ([]byte, error) {
 		"lines": lines,
 	}
 
-	tmpl := template.Must(template.New("base").Parse(htmlTemplate))
 	var buf bytes.Buffer
 	if err := tmpl.ExecuteTemplate(&buf, "base", &data); err != nil {
 		return nil, err
@@ -189,10 +213,52 @@ func toHTML(body []byte) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
+func (epub Epub) createContentOpf() error {
+	data := map[string]interface{}{
+		"title":  epub.title,
+		"author": epub.author,
+		"uuid":   epub.UUID,
+		"date":   time.Now().Format("2006-01-02T15:04:05-07:00"),
+		// 2017-12-18T23:32:49+00:00
+		"items": epub.items,
+	}
+
+	var buf bytes.Buffer
+	if err := tmpl.ExecuteTemplate(&buf, "opf", &data); err != nil {
+		return err
+	}
+
+	filename := filepath.Join(epub.containerDirectory(), "content.opf")
+	ioutil.WriteFile(filename, buf.Bytes(), os.ModePerm)
+
+	return nil
+}
+
+func (epub Epub) createTocNcx() error {
+	data := map[string]interface{}{
+		"title":  epub.title,
+		"author": epub.author,
+		"uuid":   epub.UUID,
+		"date":   time.Now().Format("2006-01-02T15:04:05-07:00"),
+		// 2017-12-18T23:32:49+00:00
+		"items": epub.items,
+	}
+
+	var buf bytes.Buffer
+	if err := tmpl.ExecuteTemplate(&buf, "ncx", &data); err != nil {
+		return err
+	}
+
+	filename := filepath.Join(epub.containerDirectory(), "toc.ncx")
+	ioutil.WriteFile(filename, buf.Bytes(), os.ModePerm)
+
+	return nil
+}
+
 func createZip(source, target string) error {
 	zipfile, err := os.Create(target)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "createZip os.Create")
 	}
 	defer zipfile.Close()
 
@@ -201,7 +267,7 @@ func createZip(source, target string) error {
 
 	info, err := os.Stat(source)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "createZip os.Stat")
 	}
 
 	var baseDir string
@@ -211,18 +277,18 @@ func createZip(source, target string) error {
 
 	err = filepath.Walk(source, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
-			return err
+			return errors.Wrap(err, "createZip filepath.Walk")
 		}
 
 		header, err := zip.FileInfoHeader(info)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "createZip zip.FileInfoHeader")
 		}
 
 		if baseDir != "" {
-			header.Name = filepath.Join(baseDir, strings.TrimPrefix(path, source))
-			// header.Name = strings.TrimPrefix(path, source)
+			header.Name = strings.TrimPrefix(path, source)
 		}
+		header.Name = strings.TrimPrefix(header.Name, "/")
 
 		if info.IsDir() {
 			header.Name += "/"
@@ -232,7 +298,7 @@ func createZip(source, target string) error {
 
 		writer, err := archive.CreateHeader(header)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "createZip archive.createheader")
 		}
 
 		if info.IsDir() {
@@ -241,15 +307,81 @@ func createZip(source, target string) error {
 
 		file, err := os.Open(path)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "createZip os.Open")
 		}
 		defer file.Close()
 		_, err = io.Copy(writer, file)
-		return err
+		if err != nil {
+			return errors.Wrap(err, "createZip io.Copy")
+		}
+
+		return nil
 	})
 	if err != nil {
 		return errors.Wrap(err, "createZip filepath.Walk")
 	}
 
 	return err
+}
+
+func copyTemplateDirectory(dest string) error {
+	stat, err := os.Stat(templateDirectory)
+	if err != nil {
+		return errors.Wrap(err, "copyTemplateDirectory stat")
+	}
+
+	return dcopy(templateDirectory, dest, stat)
+}
+
+func copy(src, dest string, info os.FileInfo) error {
+	if info.IsDir() {
+		return dcopy(src, dest, info)
+	}
+	return fcopy(src, dest, info)
+}
+
+func fcopy(src, dest string, info os.FileInfo) error {
+
+	f, err := os.Create(dest)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	if err = os.Chmod(f.Name(), info.Mode()); err != nil {
+		return err
+	}
+
+	s, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer s.Close()
+
+	_, err = io.Copy(f, s)
+	return err
+}
+
+func dcopy(src, dest string, info os.FileInfo) error {
+
+	if err := os.MkdirAll(dest, info.Mode()); err != nil {
+		return err
+	}
+
+	infos, err := ioutil.ReadDir(src)
+	if err != nil {
+		return err
+	}
+
+	for _, info := range infos {
+		if err := copy(
+			filepath.Join(src, info.Name()),
+			filepath.Join(dest, info.Name()),
+			info,
+		); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

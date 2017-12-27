@@ -13,6 +13,8 @@ type CrawlData struct {
 	GeneralAllNo int    `json:"general_all_no"`
 	End          int    `json:"end"`
 	IsStop       int    `json:"isstop"`
+	Writer       string `json:"writer"`
+	Title        string `json:"title"`
 }
 
 func GetCrawlData() ([]CrawlData, error) {

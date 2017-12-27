@@ -62,7 +62,7 @@ func crawl(item *config.CrawlData) error {
 		return err
 	}
 
-	e := epub.NewEpub(container)
+	e := epub.NewEpub(item.NCode, item.Title, item.Writer)
 	if err = e.GenerateByEpisodeNumber(episodeNumber); err != nil {
 		return err
 	}
