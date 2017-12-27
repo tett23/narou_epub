@@ -1,18 +1,20 @@
 package novel
 
 import (
-	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
 
 	"github.com/pkg/errors"
-	"github.com/tett23/narou_epub/src/config"
 )
 
 type Container struct {
-	NCode string
+	NCode  string
+	Title  string
+	Author string
+	UserID int
+
+	episodes []Episode
 }
 
 var containerRoot = ""
@@ -27,9 +29,12 @@ func init() {
 	containerRoot = filepath.Join(dir, "containers")
 }
 
-func NewContainer(nCode string) *Container {
+func NewContainer(nCode, title, author string, userID int) *Container {
 	return &Container{
-		NCode: nCode,
+		NCode:  nCode,
+		Title:  title,
+		Author: author,
+		UserID: userID,
 	}
 }
 
@@ -38,7 +43,7 @@ func GetContainer(nCode string) (*Container, error) {
 		NCode: nCode,
 	}
 
-	dir := ret.containerDirectory()
+	dir := containerDirectory(nCode)
 	stat, err := os.Stat(dir)
 	if err != nil {
 		return nil, errors.Wrapf(err, "GetContainer not found NCode: %s", nCode)
@@ -54,28 +59,14 @@ func (container Container) NCodeNumber() (int, error) {
 	return nCodeNumber(container.NCode)
 }
 
-func (container Container) Write(item *config.CrawlData, body []byte) error {
-	if err := container.checkDirectory(); err != nil {
-		return err
-	}
-
-	fmt.Println("write", container.containerDirectory())
-
-	if err := ioutil.WriteFile(container.episodeFilePath(item.GeneralAllNo), body, os.ModePerm); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (container Container) checkDirectory() error {
-	containerDir := container.containerDirectory()
-	if !container.isExistContainerDirectory() {
+func checkContainerDirectory(nCode string) error {
+	containerDir := containerDirectory(nCode)
+	if !isExistContainerDirectory(nCode) {
 		if err := os.MkdirAll(containerDir, os.ModePerm); err != nil {
 			return err
 		}
 
-		if err := os.MkdirAll(filepath.Join(containerDir, containerBodyDirectory), os.ModePerm); err != nil {
+		if err := os.MkdirAll(bodyDirectory(nCode), os.ModePerm); err != nil {
 			return err
 		}
 	}
@@ -83,8 +74,8 @@ func (container Container) checkDirectory() error {
 	return nil
 }
 
-func (container Container) isExistContainerDirectory() bool {
-	stat, err := os.Stat(container.containerDirectory())
+func isExistContainerDirectory(nCode string) bool {
+	stat, err := os.Stat(containerDirectory(nCode))
 	if err != nil {
 		return false
 	}
@@ -92,39 +83,67 @@ func (container Container) isExistContainerDirectory() bool {
 	return stat.IsDir()
 }
 
-func (container Container) containerDirectory() string {
-	return filepath.Join(containerRoot, container.NCode)
+func containerDirectory(nCode string) string {
+	return filepath.Join(containerRoot, nCode)
 }
 
-func (container Container) episodeFilePath(episodeNumber int) string {
-	filename := fmt.Sprintf("%04d.txt", episodeNumber)
-
-	return filepath.Join(containerRoot, container.NCode, containerBodyDirectory, filename)
+func bodyDirectory(nCode string) string {
+	return filepath.Join(containerDirectory(nCode), containerBodyDirectory)
 }
 
 func (container Container) IsExistEpisode(episodeNumber int) bool {
-	stat, err := os.Stat(container.episodeFilePath(episodeNumber))
+	return Episode{NCode: container.NCode, EpisodeNumber: episodeNumber}.IsExistFile()
+}
+
+func (container *Container) GetAvailableEpisodes() ([]Episode, error) {
+	err := container.loadDirectory()
 	if err != nil {
-		return false
+		return nil, errors.Wrap(err, "Container.GetAvailableEpisodes loadDirectory")
 	}
 
-	return !stat.IsDir()
+	return container.episodes, nil
 }
 
-func (container Container) GetAvailableEpisodeNumbers() ([]int, error) {
-	return nil, nil
+func (container *Container) loadDirectory() error {
+	dir := bodyDirectory(container.NCode)
+	stat, err := os.Stat(dir)
+	if err != nil {
+		return errors.Wrap(err, "novel.loadDirecory stat error")
+	}
+
+	if !stat.IsDir() {
+		return errors.Errorf("novel.loadDirecory stat.IsDir %s", dir)
+	}
+
+	episodes := make([]Episode, 0)
+	err = filepath.Walk(dir, func(path string, stat os.FileInfo, err error) error {
+		if err != nil {
+			return errors.Wrap(err, "filepath.Walk")
+		}
+		if stat.IsDir() {
+			return nil
+		}
+
+		episode, err := NewEpisodeByJSONFile(path)
+		if err != nil {
+			return errors.Wrapf(err, "filepath.Walk NewEpisodeByJSONFile %s", path)
+		}
+		episodes = append(episodes, *episode)
+
+		return nil
+	})
+
+	container.episodes = episodes
+
+	return nil
+
 }
 
-func (container Container) GetEpisode(episodeNumber int) ([]byte, error) {
-	if !container.isExistContainerDirectory() {
+func (container Container) GetEpisode(episodeNumber int) (*Episode, error) {
+	episode, err := NewEpisodeByJSONFile(episodeFilePath(container.NCode, episodeNumber))
+	if err != nil {
 		return nil, errors.Errorf("GetEpisode error: episode file not found NCode: %s, EpisodeNumber: %d", container.NCode, episodeNumber)
 	}
 
-	p := container.episodeFilePath(episodeNumber)
-	ret, err := ioutil.ReadFile(p)
-	if err != nil {
-		return nil, errors.Wrap(err, fmt.Sprintf("GetEpisode ioutil.ReadFile(%d)", episodeNumber))
-	}
-
-	return ret, nil
+	return episode, nil
 }

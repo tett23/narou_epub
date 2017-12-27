@@ -22,17 +22,15 @@ type Epub struct {
 	NCode string
 	UUID  string
 
-	items  []string
-	title  string
-	author string
+	episodes []*novel.Episode
+	title    string
+	author   string
 }
 
 var containerRoot string
 var outDirectory string
 var templateDirectory string
 var tmpl *template.Template
-
-const containerBodyDirectory = "body"
 
 func init() {
 	_, filename, _, _ := runtime.Caller(1)
@@ -51,9 +49,9 @@ func NewEpub(nCode, title, author string) *Epub {
 		NCode: nCode,
 		UUID:  id,
 
-		items:  make([]string, 0),
-		title:  title,
-		author: author,
+		episodes: make([]*novel.Episode, 0),
+		title:    title,
+		author:   author,
 	}
 }
 
@@ -67,14 +65,14 @@ func (epub Epub) GenerateAll() error {
 		return errors.Errorf("epub.GenerateByEpisodeNumber: container not found NCode: %s", epub.NCode)
 	}
 
-	episodeNumbers, err := container.GetAvailableEpisodeNumbers()
+	episodes, err := container.GetAvailableEpisodes()
 	if err != nil {
 		return errors.Wrapf(err, "epub.GenerateAll: container.GetAvailableEpisodeNumbers NCode: %s", epub.NCode)
 	}
 
-	for _, episodeNumber := range episodeNumbers {
-		if err = epub.addEpisodeFile(container, episodeNumber); err != nil {
-			return errors.Wrapf(err, "epub.GenerateByAll: container.addEpisodeFile NCode: %s, EpisodeNumber: %d", epub.NCode, episodeNumber)
+	for i := range episodes {
+		if err = epub.addEpisodeFile(&episodes[i]); err != nil {
+			return errors.Wrapf(err, "epub.GenerateByAll: container.addEpisodeFile NCode: %s, EpisodeNumber: %d", epub.NCode, episodes[i].EpisodeNumber)
 		}
 	}
 
@@ -91,7 +89,12 @@ func (epub Epub) GenerateByEpisodeNumber(episodeNumber int) error {
 		return errors.Errorf("epub.GenerateByEpisodeNumber: container not found NCode: %s", epub.NCode)
 	}
 
-	if err = epub.addEpisodeFile(container, episodeNumber); err != nil {
+	episode, err := container.GetEpisode(episodeNumber)
+	if err != nil {
+		return errors.Errorf("epub.GenerateByEpisodeNumber: episode not found NCode: %s", epub.NCode)
+	}
+
+	if err = epub.addEpisodeFile(episode); err != nil {
 		return errors.Wrapf(err, "epub.GenerateByEpisodeNumber: container.addEpisodeFile NCode: %s, EpisodeNumber: %d", epub.NCode, episodeNumber)
 	}
 
@@ -102,17 +105,10 @@ func (epub Epub) GenerateByEpisodeNumber(episodeNumber int) error {
 	return nil
 }
 
-func (epub *Epub) addEpisodeFile(container *novel.Container, episodeNumber int) error {
-	if !container.IsExistEpisode(episodeNumber) {
-		return errors.Errorf("epub.addEpisodeFile: episode not found NCode: %s, EpisodeNumber: %d", epub.NCode, episodeNumber)
-	}
+func (epub *Epub) addEpisodeFile(episode *novel.Episode) error {
+	episodeNumber := episode.EpisodeNumber
 
-	content, err := container.GetEpisode(episodeNumber)
-	if err != nil {
-		return errors.Wrapf(err, "epub.addEpisodeFile: container.GetEpisode NCode: %s, EpisodeNumber: %d", epub.NCode, episodeNumber)
-	}
-
-	html, err := toHTML(content)
+	html, err := toHTML(episode)
 	if err != nil {
 		return errors.Errorf("epub.addEpisodeFile: toHTML NCode: %s, EpisodeNumber: %d", epub.NCode, episodeNumber)
 	}
@@ -121,12 +117,12 @@ func (epub *Epub) addEpisodeFile(container *novel.Container, episodeNumber int) 
 		return errors.Wrapf(err, "epub.addEpisodeFile: checkDirectory NCode: %s, EpisodeNumber: %d", epub.NCode, episodeNumber)
 	}
 
-	filename := epub.episodeFilePath(episodeNumber)
-	if err := ioutil.WriteFile(filename, html, os.ModePerm); err != nil {
+	path := filepath.Join(containerRoot, epub.Name(), episode.EpubPath())
+	if err := ioutil.WriteFile(path, html, os.ModePerm); err != nil {
 		return errors.Wrapf(err, "epub.addEpisodeFile: WriteFile NCode: %s, EpisodeNumber: %d", epub.NCode, episodeNumber)
 	}
 
-	epub.items = append(epub.items, strings.TrimPrefix(filename, epub.containerDirectory()+"/"))
+	epub.episodes = append(epub.episodes, episode)
 
 	return nil
 }
@@ -160,7 +156,7 @@ func (epub Epub) checkDirectory() error {
 			return err
 		}
 
-		if err := os.MkdirAll(filepath.Join(containerDir, containerBodyDirectory), os.ModePerm); err != nil {
+		if err := os.MkdirAll(filepath.Join(containerDir, "body"), os.ModePerm); err != nil {
 			return err
 		}
 
@@ -189,20 +185,12 @@ func (epub Epub) containerDirectory() string {
 	return filepath.Join(containerRoot, epub.Name())
 }
 
-func (epub Epub) episodeFilePath(episodeNumber int) string {
-	filename := fmt.Sprintf("%04d.html", episodeNumber)
-
-	return filepath.Join(containerRoot, epub.Name(), containerBodyDirectory, filename)
-}
-
-func toHTML(body []byte) ([]byte, error) {
-	lines := strings.Split(string(body), "\n")
-	title := lines[0]
-	lines = lines[2:]
-
+func toHTML(episode *novel.Episode) ([]byte, error) {
 	data := map[string]interface{}{
-		"title": title,
-		"lines": lines,
+		"title":      episode.EpisodeTitle,
+		"preface":    strings.Split(episode.Preface, "\n"),
+		"body":       strings.Split(episode.Body, "\n"),
+		"postscript": strings.Split(episode.Postscript, "\n"),
 	}
 
 	var buf bytes.Buffer
@@ -213,14 +201,27 @@ func toHTML(body []byte) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
+type epubItem struct {
+	Name string
+	Path string
+}
+
 func (epub Epub) createContentOpf() error {
+	items := make([]epubItem, 0)
+	for _, item := range epub.episodes {
+		items = append(items, epubItem{
+			Name: item.EpisodeTitle,
+			Path: item.EpubPath(),
+		})
+	}
+
 	data := map[string]interface{}{
 		"title":  epub.title,
 		"author": epub.author,
 		"uuid":   epub.UUID,
 		"date":   time.Now().Format("2006-01-02T15:04:05-07:00"),
 		// 2017-12-18T23:32:49+00:00
-		"items": epub.items,
+		"items": items,
 	}
 
 	var buf bytes.Buffer
@@ -235,13 +236,21 @@ func (epub Epub) createContentOpf() error {
 }
 
 func (epub Epub) createTocNcx() error {
+	items := make([]epubItem, 0)
+	for _, item := range epub.episodes {
+		items = append(items, epubItem{
+			Name: item.EpisodeTitle,
+			Path: item.EpubPath(),
+		})
+	}
+
 	data := map[string]interface{}{
 		"title":  epub.title,
 		"author": epub.author,
 		"uuid":   epub.UUID,
 		"date":   time.Now().Format("2006-01-02T15:04:05-07:00"),
 		// 2017-12-18T23:32:49+00:00
-		"items": epub.items,
+		"items": items,
 	}
 
 	var buf bytes.Buffer

@@ -57,8 +57,8 @@ func crawl(item *config.CrawlData) error {
 		return err
 	}
 
-	container := novel.NewContainer(item.NCode)
-	if err = container.Write(item, body); err != nil {
+	episode := novel.NewEpisode(item.NCode, episodeNumber, string(body))
+	if episode.Write(); err != nil {
 		return err
 	}
 

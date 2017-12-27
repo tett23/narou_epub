@@ -9,9 +9,20 @@ const htmlTemplate = `{{define "base"}}<?xml version='1.0' encoding='utf-8'?>
     <link href="../page_styles.css" rel="stylesheet" type="text/css"/>
   </head>
   <body id="main" class="calibre">
-    <h2 class="calibre7" id="calibre_pb_0">{{.title}}</h2>
-    {{range .lines}}
+    {{range .preface}}
       {{.}}<p class="calibre6" style="margin:0pt; border:0pt; height:0pt"> </p>
+    {{end}}
+
+    <h2 class="calibre7" id="calibre_pb_0">{{.title}}</h2>
+    {{range .body}}
+      {{.}}<p class="calibre6" style="margin:0pt; border:0pt; height:0pt"> </p>
+    {{end}}
+
+    {{if .postscript}}
+      <hr />
+      {{range .postscript}}
+        {{.}}<p class="calibre6" style="margin:0pt; border:0pt; height:0pt"> </p>
+      {{end}}
     {{end}}
   </body>
 </html>
@@ -35,7 +46,7 @@ const contentOpfTemplate = `{{define "opf"}}<?xml version='1.0' encoding='utf-8'
     <item href="stylesheet.css" id="css" media-type="text/css"/>
     <item href="toc.ncx" id="ncx" media-type="application/x-dtbncx+xml"/>
     {{range $i, $v := .items}}
-    <item href="{{$v}}" id="id_{{$i}}" media-type="application/xhtml+xml"/>
+    <item href="{{$v.Path}}" id="id_{{$i}}" media-type="application/xhtml+xml"/>
     {{end}}
   </manifest>
   <spine toc="ncx" page-progression-direction="rtl">
@@ -64,9 +75,9 @@ const tocNcxTemplate = `{{define "ncx"}}<?xml version='1.0' encoding='utf-8'?>
     {{range $i, $v := .items}}
     <navPoint class="chapter" id="id_{{$i}}" playOrder="{{$i}}">
       <navLabel>
-        <text>タイトルページ</text>
+        <text>{{$v.Name}}</text>
       </navLabel>
-      <content src="{{$v}}#main"/>
+      <content src="{{$v.Path}}#main"/>
     </navPoint>
     {{end}}
   </navMap>
