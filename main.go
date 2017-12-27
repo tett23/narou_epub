@@ -13,25 +13,28 @@ import (
 )
 
 func main() {
-	ch := make(chan config.CrawlData, 1)
+	ch := make(chan *config.CrawlData, 1)
 	err := novel.GetFeed(ch)
 	if err != nil {
 		panic(err)
 	}
 
 	for {
-		fmt.Println(ch)
 		select {
 		case item := <-ch:
 			fmt.Println("ch", item)
-			go crawl(item)
+			go func() {
+				if err := crawl(item); err != nil {
+					fmt.Println("channel err crawl", err)
+				}
+			}()
 		}
 
 		time.Sleep(3 * time.Second)
 	}
 }
 
-func crawl(item config.CrawlData) error {
+func crawl(item *config.CrawlData) error {
 	params := url.Values{
 		"no":      {strconv.Itoa(item.GeneralAllNo)},
 		"hankaku": {"0"},
@@ -52,15 +55,10 @@ func crawl(item config.CrawlData) error {
 		return err
 	}
 
-	// fmt.Printf("crawl body %s\n", body)
-
-	if err = write(item, string(body)); err != nil {
+	container := novel.NewContainer(item.NCode)
+	if err = container.Write(item, body); err != nil {
 		return err
 	}
 
-	return nil
-}
-
-func write(item config.CrawlData, body string) error {
 	return nil
 }

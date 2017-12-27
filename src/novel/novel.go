@@ -12,7 +12,7 @@ import (
 	"github.com/tett23/narou_epub/src/config"
 )
 
-func GetFeed(ch chan config.CrawlData) error {
+func GetFeed(ch chan *config.CrawlData) error {
 	conf, err := config.GetConfig()
 	if err != nil {
 		return err
@@ -60,7 +60,7 @@ func GetFeed(ch chan config.CrawlData) error {
 			item := current
 			item.GeneralAllNo = i
 
-			ch <- item
+			ch <- &item
 		}
 	}
 
