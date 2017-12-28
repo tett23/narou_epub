@@ -100,12 +100,27 @@ func fetchLatestEpisode(job *Job) error {
 
 	d := data[0]
 
-	container := novel.NewContainer(d.NCode, d.Title, d.Writer, d.UserID)
+	var container *novel.Container
+	if container, err = novel.GetContainer(d.NCode); err != nil {
+		container = novel.NewContainer(d.NCode, d.Title, d.Writer, d.UserID)
+	}
+
+	updatedAt, err := d.LastUpdatedAt()
+	if err != nil {
+		return err
+	}
+	if container.UpdatedAt.Unix() >= updatedAt.Unix() {
+		return nil
+	}
+
 	if err = container.Write(); err != nil {
 		return err
 	}
 
 	episode, err := crawl(job.NCode, d.GeneralAllNo)
+	if err != nil {
+		return err
+	}
 	if err = episode.Write(); err != nil {
 		return err
 	}

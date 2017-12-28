@@ -22,6 +22,7 @@ func main() {
 	}
 
 	ch := time.Tick(1 * time.Hour)
+	// ch := time.Tick(5 * time.Second)
 	for {
 		select {
 		case <-ch:
