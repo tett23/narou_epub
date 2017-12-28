@@ -88,6 +88,14 @@ func (episode *Episode) Parse(txt string) {
 	body = re.ReplaceAllString(body, "\n$1")
 	re = regexp.MustCompile("\n{4,}\n*")
 	body = re.ReplaceAllString(body, "\n\n\n\n")
+	body = strings.Replace(body, " ", "　", -1)
+	body = strings.Replace(body, "!", "！", -1)
+	body = strings.Replace(body, "?", "？", -1)
+	// 2文字ずつ取得して置換のほうが正しい結果が得られそうだけど、面倒
+	body = strings.Replace(body, "！？", "⁉", -1)
+	body = strings.Replace(body, "！？", "⁈", -1)
+	body = strings.Replace(body, "！！", "‼", -1)
+	body = strings.Replace(body, "？？", "⁇", -1)
 
 	lines := strings.Split(body, "\n")
 
