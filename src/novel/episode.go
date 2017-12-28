@@ -84,24 +84,41 @@ func (episode *Episode) Parse(txt string) {
 
 	body = strings.TrimSpace(body)
 	body = strings.Replace(body, "\r\n", "\n", -1)
+	lines := strings.Split(body, "\n")
+	episode.EpisodeTitle = lines[0]
+	body = strings.Join(lines[1:], "\n")
+
+	// 空行の処理
 	// regexpは否定先読みを使えない
 	re := regexp.MustCompile("\n\n([^\n])")
 	body = re.ReplaceAllString(body, "\n$1")
 	re = regexp.MustCompile("\n{4,}\n*")
 	body = re.ReplaceAllString(body, "\n\n\n\n")
+
+	// 行頭あけ
 	body = strings.Replace(body, " ", "　", -1)
+	body = strings.Replace(body, "(", "（", -1)
+	body = strings.Replace(body, ")", "）", -1)
+	body = strings.Replace(body, "[", "［", -1)
+	body = strings.Replace(body, "]", "］", -1)
+	body = strings.Replace(body, "<", "〈", -1)
+	body = strings.Replace(body, ">", "〉", -1)
+	body = strings.Replace(body, "＜", "〈", -1)
+	body = strings.Replace(body, "＞", "〉", -1)
+	body = strings.Replace(body, "{", "｛", -1)
+	body = strings.Replace(body, "}", "｝", -1)
+	re = regexp.MustCompile("^([^（「〔［｛【〈｛　])")
+	body = re.ReplaceAllString(body, "　$1")
+
 	body = strings.Replace(body, "!", "！", -1)
 	body = strings.Replace(body, "?", "？", -1)
 	// 2文字ずつ取得して置換のほうが正しい結果が得られそうだけど、面倒
 	body = strings.Replace(body, "！？", "⁉", -1)
-	body = strings.Replace(body, "！？", "⁈", -1)
+	body = strings.Replace(body, "？！", "⁈", -1)
 	body = strings.Replace(body, "！！", "‼", -1)
 	body = strings.Replace(body, "？？", "⁇", -1)
 
-	lines := strings.Split(body, "\n")
-
-	episode.EpisodeTitle = lines[0]
-	episode.Body = strings.Join(lines[1:], "\n")
+	episode.Body = body
 }
 
 func (episode *Episode) Write() error {

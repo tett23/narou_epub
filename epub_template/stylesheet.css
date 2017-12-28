@@ -1,6 +1,6 @@
 html, body {
+  line-break: strict;
   writing-mode: vertical-rl;
-  line-break: normal;
   -epub-writing-mode: vertical-rl;
   -webkit-writing-mode: vertical-rl;
 }
@@ -14,11 +14,11 @@ html, body {
     margin: 0 5pt;
 
     writing-mode: vertical-rl;
-    line-break: normal;
+    line-break: strict;
     -epub-writing-mode: vertical-rl;
     -webkit-writing-mode: vertical-rl;
-    -epub-line-break: normal;
-    -webkit-line-break: normal;
+    -epub-line-break: strict;
+    -webkit-line-break: strict;
     }
 .calibre1 {
     display: block;
