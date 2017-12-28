@@ -3,7 +3,7 @@
   <title>NarouEpub</title>
 </head>
 <body>
-  <h1>NarouEpub</h1>
+  <h1><a href="/">NarouEpub</a></h1>
 
   {{range $i, $v := .Containers}}
   <h2>

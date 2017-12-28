@@ -3,7 +3,8 @@
   <title>NarouEpub</title>
 </head>
 <body>
-  <h1>{{.Container.Title}}</h1>
+  <h1><a href="/">NarouEpub</a></h1>
+  <h2>{{.Container.Title}}</h2>
 
   <dl>
     <dt>NCode</dt>
