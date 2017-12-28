@@ -18,3 +18,5 @@ smtp_port: int # 587
 emailがGMailのとき、smtp_passwordに普段使っているパスワードを入れると警告が出る。
 https://security.google.com/settings/security/apppasswords
 ここから専用のパスワードを発行する。
+
+起動するとlocalhost:1323でサーバが立っているので、そこから操作できる
