@@ -1,5 +1,5 @@
-hash: 858ec334e6d84999da82e9b0b120acade874ca5662cc6396f6614a46dea8dabc
-updated: 2017-12-28T10:18:12.590662874+09:00
+hash: 02e9b5ee0f29ecfe3e1869a8e54699476acbb9a66b6f57552a35cdfacde9e485
+updated: 2017-12-28T13:15:39.088524869+09:00
 imports:
 - name: github.com/labstack/echo
   version: b338075a0fc6e1a0683dbf03d09b4957a289e26f
@@ -16,6 +16,8 @@ imports:
   version: 645ef00459ed84a119197bfb8d8205042c6df63d
 - name: github.com/satori/go.uuid
   version: 879c5887cd475cd7864858769793b2ceb0d44feb
+- name: github.com/scorredoira/email
+  version: ce6dfab97c7ac801aa09ab6f3275f4534f25734b
 - name: github.com/valyala/fasttemplate
   version: 3b874956e03f1636d171bda64b130f9135f42cff
 - name: golang.org/x/crypto

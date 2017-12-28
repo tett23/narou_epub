@@ -7,7 +7,13 @@ import (
 )
 
 type Config struct {
-	NCodes []string `yaml:"n_codes"`
+	NCodes            []string `yaml:"n_codes"`
+	Email             string   `yaml:"email"`
+	SendToKindleEmail string   `yaml:"send_to_kindle_email"`
+	SMTPUserName      string   `yaml:"smtp_user_name"`
+	SMTPPassword      string   `yaml:"smtp_password"`
+	SMTPHost          string   `yaml:"smtp_host"`
+	SMTPPort          int      `yaml:"smtp_port"`
 }
 
 func GetConfig() (*Config, error) {

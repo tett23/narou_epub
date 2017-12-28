@@ -184,6 +184,10 @@ func (epub Epub) OutputFileName() string {
 	return filepath.Join(outDirectory, fmt.Sprintf("%s.epub", epub.Name()))
 }
 
+func (epub Epub) OutputFileNameMobi() string {
+	return filepath.Join(outDirectory, fmt.Sprintf("%s.mobi", epub.Name()))
+}
+
 func (epub Epub) isExistContainerDirectory() bool {
 	stat, err := os.Stat(epub.containerDirectory())
 	if err != nil {

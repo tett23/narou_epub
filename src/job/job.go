@@ -5,12 +5,15 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/mail"
+	"net/smtp"
 	"net/url"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/scorredoira/email"
 	"github.com/tett23/narou_epub/src/config"
 	"github.com/tett23/narou_epub/src/epub"
 	"github.com/tett23/narou_epub/src/novel"
@@ -231,14 +234,88 @@ func buildAll(job *Job) error {
 }
 
 func sendToKindleLatest(job *Job) error {
+	container, err := novel.GetContainer(job.NCode)
+	if err != nil {
+		return errors.Wrapf(err, "sendToKindleLatest GetContainer %s", job.NCode)
+	}
+
+	episode, err := container.LatestEpisode()
+	if err != nil {
+		return errors.Wrapf(err, "sendToKindleLatest LatestEpisode %s", job.NCode)
+	}
+
+	e := epub.NewEpub(job.NCode, container.Title, container.Author)
+	if err = e.GenerateByEpisodeNumber(episode.EpisodeNumber); err != nil {
+		return errors.Wrapf(err, "sendToKindleLatest GenerateByEpisodeNumber %s", job.NCode)
+	}
+
+	if err = sendKindleMail(e.OutputFileNameMobi()); err != nil {
+		return errors.Wrapf(err, "sendToKindleLatest sendKindleMail %s", job.NCode)
+	}
+
 	return nil
 }
 
 func sendToKindleEpisode(job *Job) error {
+	container, err := novel.GetContainer(job.NCode)
+	if err != nil {
+		return errors.Wrapf(err, "sendToKindleEpisode GetContainer %s", job.NCode)
+	}
+
+	e := epub.NewEpub(job.NCode, container.Title, container.Author)
+	if err = e.GenerateByEpisodeNumber(job.EpisodeNumber); err != nil {
+		return errors.Wrapf(err, "sendToKindleEpisode GenerateByEpisodeNumber %s", job.NCode)
+	}
+
+	if err = sendKindleMail(e.OutputFileNameMobi()); err != nil {
+		return errors.Wrapf(err, "sendToKindleEpisode sendKindleMail %s", job.NCode)
+	}
+
 	return nil
 }
 
 func sendToKindleAll(job *Job) error {
+	container, err := novel.GetContainer(job.NCode)
+	if err != nil {
+		return errors.Wrapf(err, "sendToKindleAll GetContainer %s", job.NCode)
+	}
+
+	e := epub.NewEpub(job.NCode, container.Title, container.Author)
+	if err = e.GenerateAll(); err != nil {
+		return errors.Wrapf(err, "buildLatestEpisode GenerateAll %s", job.NCode)
+	}
+
+	if err = sendKindleMail(e.OutputFileNameMobi()); err != nil {
+		return errors.Wrapf(err, "sendToKindleAll sendKindleMail %s", job.NCode)
+	}
+
+	return nil
+}
+
+func sendKindleMail(file string) error {
+	conf, err := config.GetConfig()
+	if err != nil {
+		return errors.Wrapf(err, "sendKindleMail GetConfig")
+	}
+
+	m := email.NewMessage("", "")
+	m.From = mail.Address{Address: conf.SendToKindleEmail}
+	m.To = []string{conf.SendToKindleEmail}
+
+	err = m.Attach(file)
+	if err != nil {
+		return errors.Wrapf(err, "sendKindleMail Attach File")
+	}
+
+	auth := smtp.PlainAuth("", conf.Email, conf.SMTPPassword, conf.SMTPHost)
+	// auth := smtp.CRAMMD5Auth(conf.Email, conf.SMTPPassword)
+
+	host := fmt.Sprintf("%s:%d", conf.SMTPHost, conf.SMTPPort)
+	err = email.Send(host, auth, m)
+	if err != nil {
+		return errors.Wrapf(err, "sendKindleMail email.Send")
+	}
+
 	return nil
 }
 
