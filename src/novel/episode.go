@@ -22,6 +22,8 @@ type Episode struct {
 	UpdatedAt     time.Time `json:"updated_at"`
 }
 
+const separator = "********************************************"
+
 func NewEpisode(nCode string, episodeNumber int, body string) *Episode {
 	ret := &Episode{
 		NCode:         nCode,
@@ -59,8 +61,6 @@ func (episode Episode) EpubPath() string {
 	return filepath.Join("body", fmt.Sprintf("section_%d.html", episode.EpisodeNumber))
 }
 
-const separator = "********************************************"
-
 func (episode *Episode) Parse(txt string) {
 	var body string
 
@@ -81,6 +81,7 @@ func (episode *Episode) Parse(txt string) {
 		body = parts[0]
 	}
 
+	body = strings.TrimSpace(body)
 	lines := strings.Split(body, "\r\n")
 
 	episode.EpisodeTitle = lines[0]
