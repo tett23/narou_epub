@@ -27,6 +27,7 @@ type JobType int
 const (
 	JobTypeNone JobType = iota
 	JobTypeFetchLatestEpisode
+	JobTypeFetchEpisode
 	JobTypeFetchAll
 	JobTypeBuildLatestEpisode
 	JobTypeBuildAll
@@ -60,7 +61,7 @@ func ProcessJobQueue() {
 			}()
 		}
 
-		time.Sleep(3 * time.Second)
+		time.Sleep(5 * time.Second)
 	}
 }
 
@@ -69,6 +70,8 @@ func processJob(job *Job) error {
 	switch job.JobType {
 	case JobTypeFetchLatestEpisode:
 		err = fetchLatestEpisode(job)
+	case JobTypeFetchEpisode:
+		err = fetchEpisode(job)
 	case JobTypeFetchAll:
 		err = fetchAll(job)
 	case JobTypeBuildLatestEpisode:
@@ -103,6 +106,7 @@ func fetchLatestEpisode(job *Job) error {
 	var container *novel.Container
 	if container, err = novel.GetContainer(d.NCode); err != nil {
 		container = novel.NewContainer(d.NCode, d.Title, d.Writer, d.UserID)
+		Enqueue(JobTypeFetchAll, d.NCode, -1)
 	}
 
 	updatedAt, err := d.LastUpdatedAt()
@@ -117,31 +121,55 @@ func fetchLatestEpisode(job *Job) error {
 		return err
 	}
 
-	episode, err := crawl(job.NCode, d.GeneralAllNo)
-	if err != nil {
-		return err
-	}
-	if err = episode.Write(); err != nil {
-		return err
-	}
-
+	Enqueue(JobTypeFetchEpisode, job.NCode, d.GeneralAllNo)
 	Enqueue(JobTypeBuildLatestEpisode, d.NCode, d.GeneralAllNo)
+	Enqueue(JobTypeBuildAll, d.NCode, d.GeneralAllNo)
 
 	return nil
 }
 
 func fetchEpisode(job *Job) error {
+	episode, err := crawl(job.NCode, job.EpisodeNumber)
+	if err != nil {
+		return err
+	}
+
+	if err = episode.Write(); err != nil {
+		return err
+	}
+
 	return nil
 }
 
 func fetchAll(job *Job) error {
+	data, err := getDetail([]string{job.NCode})
+	if err != nil {
+		return err
+	}
+
+	if len(data) == 0 {
+		return nil
+	}
+
+	d := data[0]
+	for i := 1; i <= data[0].GeneralAllNo; i++ {
+		Enqueue(JobTypeFetchEpisode, job.NCode, i)
+	}
+
+	container := novel.NewContainer(d.NCode, d.Title, d.Writer, d.UserID)
+	if err = container.Write(); err != nil {
+		return err
+	}
+
+	Enqueue(JobTypeBuildAll, d.NCode, -1)
+
 	return nil
 }
 
 func buildLatestEpisode(job *Job) error {
 	container, err := novel.GetContainer(job.NCode)
 	if err != nil {
-		errors.Wrapf(err, "buildLatestEpisode GeetContainer %s", job.NCode)
+		errors.Wrapf(err, "buildLatestEpisode GetContainer %s", job.NCode)
 	}
 
 	episode, err := container.LatestEpisode()
@@ -164,6 +192,18 @@ func buildEpisode(job *Job) error {
 }
 
 func buildAll(job *Job) error {
+	container, err := novel.GetContainer(job.NCode)
+	if err != nil {
+		errors.Wrapf(err, "buildLatestEpisode GetContainer %s", job.NCode)
+	}
+
+	e := epub.NewEpub(job.NCode, container.Title, container.Author)
+	if err = e.GenerateAll(); err != nil {
+		errors.Wrapf(err, "buildLatestEpisode GenerateAll %s", job.NCode)
+	}
+
+	fmt.Printf("write epub file %s\n", e.OutputFileName())
+
 	return nil
 }
 
@@ -284,9 +324,6 @@ func crawl(nCode string, episodeNumber int) (*novel.Episode, error) {
 	}
 
 	episode := novel.NewEpisode(nCode, episodeNumber, string(body))
-	if err = episode.Write(); err != nil {
-		return nil, errors.Wrapf(err, "job.crawl NewEpisode NCode: %s, EpisodeNumber: %d", nCode, episodeNumber)
-	}
 
 	return episode, nil
 }
