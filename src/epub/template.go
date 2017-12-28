@@ -10,18 +10,18 @@ const htmlTemplate = `{{define "base"}}<?xml version='1.0' encoding='utf-8'?>
   </head>
   <body id="main" class="calibre">
     {{range .preface}}
-      {{.}}<p class="calibre6" style="margin:0pt; border:0pt; height:0pt"> </p>
+      <p class="calibre6">{{.}}</p>
     {{end}}
 
     <h2 class="calibre7" id="calibre_pb_0">{{.title}}</h2>
     {{range .body}}
-      {{.}}<p class="calibre6" style="margin:0pt; border:0pt; height:0pt"> </p>
+    <p class="calibre6">{{.}}</p>
     {{end}}
 
     {{if .postscript}}
       <hr />
       {{range .postscript}}
-        {{.}}<p class="calibre6" style="margin:0pt; border:0pt; height:0pt"> </p>
+      <p class="calibre6">{{.}}</p>
       {{end}}
     {{end}}
   </body>

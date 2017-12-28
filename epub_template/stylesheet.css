@@ -49,7 +49,10 @@ html, body {
     }
 .calibre6 {
     display: block;
-    line-height: 125%
+    margin: 0;
+    border: none;
+    padding: 0;
+    line-height: 1.66em;
     }
 .calibre7 {
     display: block;
