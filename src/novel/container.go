@@ -49,13 +49,13 @@ func GetContainer(nCode string) (*Container, error) {
 		NCode: nCode,
 	}
 
-	dir := containerDirectory(nCode)
-	stat, err := os.Stat(dir)
+	bytes, err := ioutil.ReadFile(ret.Path())
 	if err != nil {
 		return nil, errors.Wrapf(err, "GetContainer not found NCode: %s", nCode)
 	}
-	if !stat.IsDir() {
-		return nil, errors.Wrapf(err, "GetContainer not found NCode: %s", nCode)
+
+	if err = json.Unmarshal(bytes, &ret); err != nil {
+		return nil, errors.Wrapf(err, "GetContainer json.Unmarshal NCode: %s", nCode)
 	}
 
 	if err = ret.loadDirectory(); err != nil {
@@ -63,10 +63,6 @@ func GetContainer(nCode string) (*Container, error) {
 	}
 
 	return &ret, nil
-}
-
-func (container Container) NCodeNumber() (int, error) {
-	return nCodeNumber(container.NCode)
 }
 
 func (container *Container) Write() error {
@@ -186,4 +182,12 @@ func (container Container) GetEpisode(episodeNumber int) (*Episode, error) {
 	}
 
 	return episode, nil
+}
+
+func (container Container) LatestEpisode() (*Episode, error) {
+	if len(container.episodes) == 0 {
+		return nil, errors.New("empty container")
+	}
+
+	return &container.episodes[len(container.episodes)-1], nil
 }
