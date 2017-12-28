@@ -54,7 +54,7 @@
             <a
               class="post-form"
               data-method="post"
-              href="/containers/{{$v.NCode}}/episode/{{$v.EpisodeNumber}}/publish"
+              href="/containers/{{$v.NCode}}/episode/{{$v.EpisodeNumber}}/fetch"
               onclick="return false;"
             >epub生成</a></span>
           <span>

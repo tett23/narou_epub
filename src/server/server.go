@@ -49,7 +49,6 @@ func Start(host string, port int) {
 	e.POST("/containers/:nCode/fetch", func(c echo.Context) error {
 		nCode := c.Param("nCode")
 
-		job.Enqueue(job.JobTypeFetchAll, nCode, -1)
 		job.Enqueue(job.JobTypeBuildAll, nCode, -1)
 
 		return c.Redirect(http.StatusSeeOther, fmt.Sprintf("/containers/%s", nCode))

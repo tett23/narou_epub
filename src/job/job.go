@@ -185,17 +185,32 @@ func buildLatestEpisode(job *Job) error {
 		errors.Wrapf(err, "buildLatestEpisode container.LatestEpisode %s", job.NCode)
 	}
 
+	buildEpisode(&Job{
+		JobType:       JobTypeBuildEpisode,
+		NCode:         job.NCode,
+		EpisodeNumber: episode.EpisodeNumber,
+	})
+
+	return nil
+}
+
+func buildEpisode(job *Job) error {
+	container, err := novel.GetContainer(job.NCode)
+	if err != nil {
+		errors.Wrapf(err, "buildLatestEpisode GetContainer %s", job.NCode)
+	}
+
+	episode, err := container.GetEpisode(job.EpisodeNumber)
+	if err != nil {
+		errors.Wrapf(err, "buildLatestEpisode container.LatestEpisode %s", job.NCode)
+	}
+
 	e := epub.NewEpub(job.NCode, container.Title, container.Author)
 	if err = e.GenerateByEpisodeNumber(episode.EpisodeNumber); err != nil {
 		errors.Wrapf(err, "buildLatestEpisode GenerateByEpisodeNumber %s", job.NCode)
 	}
 
 	fmt.Printf("write epub file %s\n", e.OutputFileName())
-
-	return nil
-}
-
-func buildEpisode(job *Job) error {
 	return nil
 }
 
