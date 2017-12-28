@@ -15,6 +15,8 @@
     <dd><a href="https://ncode.syosetu.com/{{$v.NCode}}/" target="_blank">{{$v.NCode}}</a></dd>
     <dt>Author</dt>
     <dd><a href="https://mypage.syosetu.com/{{$v.UserID}}/" target="_blank">{{$v.Author}}</a></dd>
+    <dt>GeneralLastUp</dt>
+    <dd>{{$v.GeneralLastUp}}</dd>
     <dt>UpdatedAt</dt>
     <dd>{{$v.UpdatedAt}}</dd>
     <dt>GeneralAllNo</dt>

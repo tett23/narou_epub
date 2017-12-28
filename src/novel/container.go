@@ -15,12 +15,13 @@ import (
 )
 
 type Container struct {
-	NCode        string    `json:"n_code"`
-	Title        string    `json:"title"`
-	Author       string    `json:"author"`
-	UserID       int       `json:"user_id"`
-	GeneralAllNo int       `json:"general_all_no"`
-	UpdatedAt    time.Time `json:"updated_at"`
+	NCode         string    `json:"n_code"`
+	Title         string    `json:"title"`
+	Author        string    `json:"author"`
+	UserID        int       `json:"user_id"`
+	GeneralAllNo  int       `json:"general_all_no"`
+	GeneralLastUp string    `json:"general_lastup"`
+	UpdatedAt     time.Time `json:"updated_at"`
 
 	Episodes []Episode `json:"-"`
 }

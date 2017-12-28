@@ -20,7 +20,7 @@ type Episode struct {
 	Body          string    `json:"body"`
 	Preface       string    `json:"preface"`
 	Postscript    string    `json:"postscript"`
-	UpdatedAt     time.Time `json:"updated_at"`
+	CrawledAt     time.Time `json:"crawled_at"`
 }
 
 const separator = "********************************************"
@@ -102,7 +102,7 @@ func (episode *Episode) Write() error {
 
 	fmt.Println("write", episode.Path())
 
-	episode.UpdatedAt = time.Now()
+	episode.CrawledAt = time.Now()
 
 	bytes, err := json.Marshal(episode)
 	if err != nil {

@@ -11,6 +11,8 @@
     <dd><a href="https://ncode.syosetu.com/{{.Container.NCode}}/" target="_blank">{{.Container.NCode}}</a></dd>
     <dt>Author</dt>
     <dd><a href="https://mypage.syosetu.com/{{.Container.UserID}}/" target="_blank">{{.Container.Author}}</a></dd>
+    <dt>GeneralLastUp</dt>
+    <dd>{{.Container.GeneralLastUp}}</dd>
     <dt>UpdatedAt</dt>
     <dd>{{.Container.UpdatedAt}}</dd>
     <dt>GeneralAllNo</dt>
@@ -40,7 +42,7 @@
       <tr>
         <th>EpisodeNumber</th>
         <th>EpisodeTitle</th>
-        <th>UpdatedAt</th>
+        <th>CrawledAt</th>
         <th></th>
       </tr>
     </thead>
@@ -49,7 +51,7 @@
       <tr>
         <td>{{$v.EpisodeNumber}}</td>
         <td><a href="https://ncode.syosetu.com/{{$v.NCode}}/{{$v.EpisodeNumber}}/" target="_blank">{{$v.EpisodeTitle}}</a></td>
-        <td>{{$v.UpdatedAt}}</td>
+        <td>{{$v.CrawledAt}}</td>
         <td>
           <span>
             <a

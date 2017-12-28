@@ -118,6 +118,7 @@ func fetchLatestEpisode(job *Job) error {
 		Enqueue(JobTypeFetchAll, d.NCode, -1)
 	}
 	container.GeneralAllNo = d.GeneralAllNo
+	container.GeneralLastUp = d.GeneralLastUp
 
 	updatedAt, err := d.LastUpdatedAt()
 	if err != nil {
@@ -168,6 +169,7 @@ func fetchAll(job *Job) error {
 
 	container := novel.NewContainer(d.NCode, d.Title, d.Writer, d.UserID)
 	container.GeneralAllNo = d.GeneralAllNo
+	container.GeneralLastUp = d.GeneralLastUp
 	if err = container.Write(); err != nil {
 		return err
 	}
