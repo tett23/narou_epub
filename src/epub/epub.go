@@ -248,9 +248,17 @@ func (epub Epub) indexItems() []epubItem {
 	return items
 }
 
+func (epub Epub) epubTitle() string {
+	ret := epub.title
+	if len(epub.episodes) == 1 {
+		ret = fmt.Sprintf("第%d部分: %s", epub.episodes[0].EpisodeNumber, epub.title)
+	}
+
+	return ret
+}
 func (epub Epub) createContentOpf() error {
 	data := map[string]interface{}{
-		"title":  epub.title,
+		"title":  epub.epubTitle(),
 		"author": epub.author,
 		"uuid":   epub.UUID,
 		"date":   time.Now().Format("2006-01-02T15:04:05-07:00"),
@@ -271,7 +279,7 @@ func (epub Epub) createContentOpf() error {
 
 func (epub Epub) createTocNcx() error {
 	data := map[string]interface{}{
-		"title":  epub.title,
+		"title":  epub.epubTitle(),
 		"author": epub.author,
 		"uuid":   epub.UUID,
 		"date":   time.Now().Format("2006-01-02T15:04:05-07:00"),
@@ -300,7 +308,7 @@ func (epub Epub) createOverview() error {
 	}
 
 	if len(epub.episodes) == 1 {
-		data["episodeTitle"] = fmt.Sprintf("%d部分:%s", epub.episodes[0].EpisodeNumber, epub.episodes[0].EpisodeTitle)
+		data["episodeTitle"] = fmt.Sprintf("第%d部分:%s", epub.episodes[0].EpisodeNumber, epub.episodes[0].EpisodeTitle)
 	}
 
 	var buf bytes.Buffer
