@@ -17,8 +17,21 @@
   </dl>
 
   <p>
-    <span><a href="/containers/{{.Container.NCode}}/fetch">epub生成</a></span>
-    <span><a href="/containers/{{.Container.NCode}}/publish">publish</a></span>
+    <span>
+      <a
+        class="post-form"
+        data-method="post"
+        href="/containers/{{.Container.NCode}}/fetch"
+        onclick="return false;"
+      >epub生成
+      </a></span>
+    <span>
+      <a
+        class="post-form"
+        data-method="post"
+        href="/containers/{{.Container.NCode}}/publish"
+        onclick="return false;"
+      >publish</a></span>
   </p>
 
   <table>
@@ -37,14 +50,45 @@
         <td><a href="https://ncode.syosetu.com/{{$v.NCode}}/{{$v.EpisodeNumber}}/" target="_blank">{{$v.EpisodeTitle}}</a></td>
         <td>{{$v.UpdatedAt}}</td>
         <td>
-          <span><a href="/containers/{{$v.NCode}}/episode/{{$v.EpisodeNumber}}/fetch">epub生成</a></span>
-          <span><a href="/containers/{{$v.NCode}}/episode/{{$v.EpisodeNumber}}/publish">publish</a></span>
+          <span>
+            <a
+              class="post-form"
+              data-method="post"
+              href="/containers/{{$v.NCode}}/episode/{{$v.EpisodeNumber}}/publish"
+              onclick="return false;"
+            >epub生成</a></span>
+          <span>
+            <a
+              class="post-form"
+              data-method="post"
+              href="/containers/{{$v.NCode}}/episode/{{$v.EpisodeNumber}}/publish"
+              onclick="return false;"
+            >publish</a></span>
           <span><a href="/containers/{{$v.NCode}}/episode/{{$v.EpisodeNumber}}">JSON</a></span>
         </td>
       </tr>
     {{end}}
     </tbody>
   </table>
+
+  <script>
+    const links = document.querySelectorAll("a.post-form")
+    links.forEach((_, i) => {
+      const link = links[i]
+
+      link.addEventListener("click", () => {
+        const form = document.createElement("form");
+        form.setAttribute("action", link.href);
+        form.setAttribute("method", link.dataset.method);
+        form.style.display = "none";
+        document.body.appendChild(form);
+        form.submit();
+
+        return false;
+      })
+
+    })
+  </script>
 
 </body>
 {{end}}
