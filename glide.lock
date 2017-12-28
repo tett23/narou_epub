@@ -1,6 +1,10 @@
-hash: d5df074851f515ca341a8c175a2710568be748be22c242c3d00f70e8afb819d8
-updated: 2017-12-28T00:42:30.782237471+09:00
+hash: 4beacdb125c51611bffd5e343fa26914f0c9d34746e6cf2dcab8d467cb16ee91
+updated: 2017-12-28T10:14:05.276348918+09:00
 imports:
+- name: github.com/labstack/echo
+  version: b338075a0fc6e1a0683dbf03d09b4957a289e26f
+  subpackages:
+  - '...'
 - name: github.com/pkg/errors
   version: 645ef00459ed84a119197bfb8d8205042c6df63d
 - name: github.com/satori/go.uuid
