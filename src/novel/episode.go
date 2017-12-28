@@ -84,6 +84,7 @@ func (episode *Episode) Parse(txt string) {
 
 	body = strings.TrimSpace(body)
 	body = strings.Replace(body, "\r\n", "\n", -1)
+	// regexpは否定先読みを使えない
 	re := regexp.MustCompile("\n\n([^\n])")
 	body = re.ReplaceAllString(body, "\n$1")
 	re = regexp.MustCompile("\n{4,}\n*")
