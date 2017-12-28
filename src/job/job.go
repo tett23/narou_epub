@@ -385,8 +385,14 @@ func getDetail(nCodes []string) ([]config.CrawlData, error) {
 func nCodeNumber(nCode string) (int, error) {
 	// (('c'.codepoints[0]-97) * 259974) + (('n'.codepoints[0]-97) * 9999) + 1337
 	nCode = strings.ToLower(nCode)
-	a := (int(nCode[5]) - 97) * 259974
-	b := (int(nCode[6]) - 97) * 9999
+	var a, b int
+	if len(nCode) == 6 { // 古いIDのときは末尾のアルファベットが1つになる
+		a = 0
+		b = (int(nCode[5]) - 97) * 9999
+	} else {
+		a = (int(nCode[5]) - 97) * 259974
+		b = (int(nCode[6]) - 97) * 9999
+	}
 
 	num, err := strconv.Atoi(nCode[1:5])
 	if err != nil {
