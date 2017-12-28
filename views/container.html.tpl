@@ -26,6 +26,14 @@
         data-method="post"
         href="/containers/{{.Container.NCode}}/fetch"
         onclick="return false;"
+      >再読みこみ
+      </a></span>
+    <span>
+      <a
+        class="post-form"
+        data-method="post"
+        href="/containers/{{.Container.NCode}}/build"
+        onclick="return false;"
       >epub生成
       </a></span>
     <span>

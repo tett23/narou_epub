@@ -133,8 +133,6 @@ func fetchLatestEpisode(job *Job) error {
 	}
 
 	Enqueue(JobTypeFetchEpisode, job.NCode, d.GeneralAllNo)
-	Enqueue(JobTypeBuildLatestEpisode, d.NCode, d.GeneralAllNo)
-	Enqueue(JobTypeBuildAll, d.NCode, d.GeneralAllNo)
 
 	return nil
 }
@@ -173,8 +171,6 @@ func fetchAll(job *Job) error {
 	if err = container.Write(); err != nil {
 		return err
 	}
-
-	Enqueue(JobTypeBuildAll, d.NCode, -1)
 
 	return nil
 }
