@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 
@@ -82,10 +83,16 @@ func (episode *Episode) Parse(txt string) {
 	}
 
 	body = strings.TrimSpace(body)
-	lines := strings.Split(body, "\r\n")
+	body = strings.Replace(body, "\r\n", "\n", -1)
+	re := regexp.MustCompile("\n\n([^\n])")
+	body = re.ReplaceAllString(body, "\n$1")
+	re = regexp.MustCompile("\n{4,}\n*")
+	body = re.ReplaceAllString(body, "\n\n\n\n")
+
+	lines := strings.Split(body, "\n")
 
 	episode.EpisodeTitle = lines[0]
-	episode.Body = strings.Join(lines[2:], "\n")
+	episode.Body = strings.Join(lines[1:], "\n")
 }
 
 func (episode *Episode) Write() error {
