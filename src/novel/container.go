@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/tett23/narou_epub/src/config"
 )
 
 type Container struct {
@@ -21,7 +22,7 @@ type Container struct {
 	GeneralAllNo int       `json:"general_all_no"`
 	UpdatedAt    time.Time `json:"updated_at"`
 
-	episodes []Episode
+	Episodes []Episode `json:"-"`
 }
 
 var containerRoot = ""
@@ -38,10 +39,11 @@ func init() {
 
 func NewContainer(nCode, title, author string, userID int) *Container {
 	return &Container{
-		NCode:  nCode,
-		Title:  title,
-		Author: author,
-		UserID: userID,
+		NCode:    nCode,
+		Title:    title,
+		Author:   author,
+		UserID:   userID,
+		Episodes: make([]Episode, 0),
 	}
 }
 
@@ -64,6 +66,25 @@ func GetContainer(nCode string) (*Container, error) {
 	}
 
 	return &ret, nil
+}
+
+func GetContainers() ([]Container, error) {
+	conf, err := config.GetConfig()
+	if err != nil {
+		return nil, errors.Wrap(err, "novel.GetContainers config error")
+	}
+
+	ret := make([]Container, 0, len(conf.NCodes))
+	for _, nCode := range conf.NCodes {
+		container, err := GetContainer(nCode)
+		if err != nil {
+			return nil, errors.Wrapf(err, "novel.GetContainers GetContainer NCode:%s", nCode)
+		}
+
+		ret = append(ret, *container)
+	}
+
+	return ret, nil
 }
 
 func (container *Container) Write() error {
@@ -134,7 +155,7 @@ func (container *Container) GetAvailableEpisodes() ([]Episode, error) {
 		return nil, errors.Wrap(err, "Container.GetAvailableEpisodes loadDirectory")
 	}
 
-	return container.episodes, nil
+	return container.Episodes, nil
 }
 
 func (container *Container) loadDirectory() error {
@@ -170,7 +191,7 @@ func (container *Container) loadDirectory() error {
 		return episodes[i].EpisodeNumber < episodes[j].EpisodeNumber
 	})
 
-	container.episodes = episodes
+	container.Episodes = episodes
 
 	return nil
 
@@ -186,9 +207,9 @@ func (container Container) GetEpisode(episodeNumber int) (*Episode, error) {
 }
 
 func (container Container) LatestEpisode() (*Episode, error) {
-	if len(container.episodes) == 0 {
+	if len(container.Episodes) == 0 {
 		return nil, errors.New("empty container")
 	}
 
-	return &container.episodes[len(container.episodes)-1], nil
+	return &container.Episodes[len(container.Episodes)-1], nil
 }

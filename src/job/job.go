@@ -30,8 +30,10 @@ const (
 	JobTypeFetchEpisode
 	JobTypeFetchAll
 	JobTypeBuildLatestEpisode
+	JobTypeBuildEpisode
 	JobTypeBuildAll
 	JobTypeSendToKindleLatest
+	JobTypeSendToKindleEpisode
 	JobTypeSendToKindleAll
 )
 
@@ -76,10 +78,14 @@ func processJob(job *Job) error {
 		err = fetchAll(job)
 	case JobTypeBuildLatestEpisode:
 		err = buildLatestEpisode(job)
+	case JobTypeBuildEpisode:
+		err = buildEpisode(job)
 	case JobTypeBuildAll:
 		err = buildAll(job)
 	case JobTypeSendToKindleLatest:
 		err = sendToKindleLatest(job)
+	case JobTypeSendToKindleEpisode:
+		err = sendToKindleEpisode(job)
 	case JobTypeSendToKindleAll:
 		err = sendToKindleAll(job)
 	case JobTypeNone:
