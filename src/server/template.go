@@ -3,6 +3,7 @@ package server
 import (
 	"html/template"
 	"io"
+	"strings"
 
 	"github.com/labstack/echo"
 )
@@ -14,8 +15,13 @@ type Template struct {
 var tmpl Template
 
 func init() {
+	funcMap := template.FuncMap{
+		"ToUpper": strings.ToUpper,
+	}
+	templates := template.Must(template.New("templates").Funcs(funcMap).ParseGlob("./views/*.html.tpl"))
+
 	tmpl = Template{
-		templates: template.Must(template.ParseGlob("./views/*.html.tpl")),
+		templates: templates,
 	}
 }
 

@@ -3,6 +3,7 @@ package server
 import (
 	"fmt"
 	"net/http"
+	"sort"
 	"strconv"
 
 	"github.com/labstack/echo"
@@ -21,10 +22,33 @@ func Start(host string, port int) {
 			c.String(http.StatusInternalServerError, err.Error())
 		}
 
+		episodes := make([]novel.Episode, 0)
+		for i := range containers {
+			items, err := containers[i].GetAvailableEpisodes()
+			if err != nil {
+				c.String(http.StatusInternalServerError, err.Error())
+			}
+			for j := range items {
+				episodes = append(episodes, items[j])
+			}
+		}
+
+		sort.Slice(episodes, func(i, j int) bool {
+			return episodes[i].CrawledAt.Unix() > episodes[j].CrawledAt.Unix()
+		})
+		count := 10
+		if len(episodes) < 10 {
+			count = len(episodes) - 1
+		}
+		latests := make([]novel.Episode, count)
+		copy(latests, episodes[0:count])
+
 		data := struct {
 			Containers []novel.Container
+			Latests    []novel.Episode
 		}{
 			Containers: containers,
+			Latests:    latests,
 		}
 
 		return c.Render(http.StatusOK, "index", data)
