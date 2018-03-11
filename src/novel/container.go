@@ -25,6 +25,7 @@ type Container struct {
 
 	Episodes []Episode `json:"-"`
 }
+type Containers []Container
 
 var containerRoot = ""
 
@@ -69,7 +70,7 @@ func GetContainer(nCode string) (*Container, error) {
 	return &ret, nil
 }
 
-func GetContainers() ([]Container, error) {
+func GetContainers() (Containers, error) {
 	conf, err := config.GetConfig()
 	if err != nil {
 		return nil, errors.Wrap(err, "novel.GetContainers config error")
@@ -213,4 +214,31 @@ func (container Container) LatestEpisode() (*Episode, error) {
 	}
 
 	return &container.Episodes[len(container.Episodes)-1], nil
+}
+
+func (containers *Containers) Latest() ([]Episode, error) {
+	episodes := make([]Episode, 0)
+	for i := range *containers {
+		items, err := (*containers)[i].GetAvailableEpisodes()
+		if err != nil {
+			return []Episode{}, err
+		}
+		for j := range items {
+			episodes = append(episodes, items[j])
+		}
+	}
+
+	sort.Slice(episodes, func(i, j int) bool {
+		return episodes[i].CrawledAt.Unix() > episodes[j].CrawledAt.Unix()
+	})
+
+	count := 10
+	if len(episodes) < 10 {
+		count = len(episodes) - 1
+	}
+
+	ret := make([]Episode, count)
+	copy(ret, episodes[0:count])
+
+	return ret, nil
 }
