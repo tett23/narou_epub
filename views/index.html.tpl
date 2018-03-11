@@ -12,6 +12,7 @@
         <th>NCode</th>
         <th>EpisodeNumber</th>
         <th>EpisodeTitle</th>
+        <th>Length</th>
         <th>CrawledAt</th>
         <th></th>
       </tr>
@@ -24,6 +25,7 @@
         </td>
         <td>{{$v.EpisodeNumber}}</td>
         <td><a href="https://ncode.syosetu.com/{{$v.NCode}}/{{$v.EpisodeNumber}}/" target="_blank">{{$v.EpisodeTitle}}</a></td>
+        <td>{{$v.Body | Len}}</td>
         <td>{{$v.CrawledAt}}</td>
         <td>
           <span>

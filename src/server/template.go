@@ -4,6 +4,7 @@ import (
 	"html/template"
 	"io"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/labstack/echo"
 )
@@ -17,6 +18,7 @@ var tmpl Template
 func init() {
 	funcMap := template.FuncMap{
 		"ToUpper": strings.ToUpper,
+		"Len":     utf8.RuneCountInString,
 	}
 	templates := template.Must(template.New("templates").Funcs(funcMap).ParseGlob("./views/*.html.tpl"))
 
