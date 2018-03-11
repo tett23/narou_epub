@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"strings"
 	"text/template"
@@ -204,7 +205,7 @@ func (epub Epub) containerDirectory() string {
 func toHTML(episode *novel.Episode) ([]byte, error) {
 	data := map[string]interface{}{
 		"title": episode.EpisodeTitle,
-		"body":  strings.Split(episode.Body, "\n"),
+		"body":  strings.Split(replaceRuby(episode.Body), "\n"),
 	}
 	if episode.Preface != "" {
 		data["preface"] = strings.Split(episode.Preface, "\n")
@@ -461,4 +462,10 @@ func convertMobi(src string) error {
 
 	return nil
 
+}
+
+func replaceRuby(text string) string {
+	re := regexp.MustCompile(`\|(.+?)《(.+?)》`)
+
+	return re.ReplaceAllString(text, "<ruby>$1<rp>（</rp><rt>$2</rt><rp>）</rp></ruby>")
 }
