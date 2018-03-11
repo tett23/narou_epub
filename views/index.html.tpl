@@ -20,7 +20,7 @@
       {{range $i,$v :=.Latests}}
       <tr>
         <td>
-          <a href="https://ncode.syosetu.com/{{$v.NCode}}/" target="_blank">{{$v.NCode | ToUpper}}</a>
+          <a href="/containers/{{$v.NCode | ToUpper}}">{{$v.NCode | ToUpper}}</a>
         </td>
         <td>{{$v.EpisodeNumber}}</td>
         <td><a href="https://ncode.syosetu.com/{{$v.NCode}}/{{$v.EpisodeNumber}}/" target="_blank">{{$v.EpisodeTitle}}</a></td>
