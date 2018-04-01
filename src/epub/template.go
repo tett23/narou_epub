@@ -15,7 +15,11 @@ const htmlTemplate = `{{define "base"}}<?xml version='1.0' encoding='utf-8'?>
 
     <h2 class="calibre7" id="calibre_pb_0">{{.title}}</h2>
     {{range .body}}
-    <p class="calibre6">{{.}}</p>
+      {{if eq . ""}}
+        <br />
+      {{else}}
+        <p class="calibre6">{{.}}</p>
+      {{end}}
     {{end}}
 
     {{if .postscript}}

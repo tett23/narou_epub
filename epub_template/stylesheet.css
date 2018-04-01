@@ -20,6 +20,11 @@ html, body {
     -epub-line-break: strict;
     -webkit-line-break: strict;
     }
+
+.calibre br {
+    line-height: 1.66em;
+}
+
 .calibre1 {
     display: block;
     font-size: 2em;
@@ -59,7 +64,7 @@ html, body {
     font-size: 1.41667em;
     font-weight: bold;
     line-height: 125%;
-    margin: 0.83em 0
+    margin: 1em 0 0 1em;
     }
 .pagebreak {
     color: gray;
