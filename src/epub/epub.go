@@ -203,9 +203,12 @@ func (epub Epub) containerDirectory() string {
 }
 
 func toHTML(episode *novel.Episode) ([]byte, error) {
+	replaced := replaceRuby1(episode.Body)
+	replaced = replaceRuby2(replaced)
+
 	data := map[string]interface{}{
 		"title": episode.EpisodeTitle,
-		"body":  strings.Split(replaceRuby(episode.Body), "\n"),
+		"body":  strings.Split(replaced, "\n"),
 	}
 	if episode.Preface != "" {
 		data["preface"] = strings.Split(episode.Preface, "\n")
@@ -464,8 +467,17 @@ func convertMobi(src string) error {
 
 }
 
-func replaceRuby(text string) string {
+func replaceRuby1(text string) string {
 	re := regexp.MustCompile(`\|(.+?)《(.+?)》`)
 
 	return re.ReplaceAllString(text, "<ruby>$1<rp>（</rp><rt>$2</rt><rp>）</rp></ruby>")
+}
+
+func replaceRuby2(text string) string {
+	re1 := regexp.MustCompile(`([\p{Han}]+)[(|（]([\p{Hiragana}\p{Katakana}ー]+)[)|）]`)
+	re2 := regexp.MustCompile(`([\p{Han}]+)\|([(|（])([\p{Hiragana}\p{Katakana}ー]+)([)|）])`)
+
+	ret := re1.ReplaceAllString(text, "<ruby>$1<rp>（</rp><rt>$2</rt><rp>）</rp></ruby>")
+
+	return re2.ReplaceAllString(ret, "$1$2$3$4")
 }
