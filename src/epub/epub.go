@@ -46,7 +46,7 @@ func init() {
 }
 
 func NewEpub(nCode, title, author string) *Epub {
-	id := uuid.NewV4().String()
+	id := uuid.Must(uuid.NewV4()).String()
 	return &Epub{
 		NCode: nCode,
 		UUID:  id,

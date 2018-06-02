@@ -4,5 +4,9 @@ import:
 - package: github.com/pkg/errors
 - package: github.com/satori/go.uuid
 - package: github.com/labstack/echo
-  version: ^3.2.6
+  version: ^3.3.5
 - package: github.com/scorredoira/email
+- package: golang.org/x/crypto
+  subpackages:
+  - acme/...
+  - acme/autocert
