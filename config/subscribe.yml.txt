@@ -1,0 +1,23 @@
+n_codes:
+  - n6475db
+  - n5529cy
+  - n6088cy
+  - n2322df
+  - n4750dy
+  - n0695bs
+  - n4185ci
+  - n8541cr
+  - n7545w
+  - n4769ck
+  - n9073ca
+  - n2506br
+  - n9239bj
+  - n1583dj
+  - n4830bu
+  - trapahi
+email: tett23@gmail.com
+send_to_kindle_email: siroasa_31@kindle.com
+smtp_user_name: tett23@gmail.com
+smtp_password: "uiboapkwdnmlwsso"
+smtp_host: smtp.gmail.com
+smtp_port: 587
