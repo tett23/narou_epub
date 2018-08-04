@@ -1,7 +1,7 @@
 ## installation
 
 ```
-$ brew cask install kindlegen
+$ brew bundle install --file Brewfile
 ```
 
 config/subscribe.yml
